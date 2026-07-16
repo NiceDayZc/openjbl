@@ -2,6 +2,15 @@
 
 All notable changes follow Keep a Changelog style. This project uses semantic versioning while its public API stabilizes.
 
+## [0.2.2] - 2026-07-16
+
+### Changed
+
+- Reworked the TUI into a guided Scan, Select, Probe, Tune, Preview, and Apply workflow.
+- Replaced Unicode-heavy borders, separators, and curve blocks with legacy-console-safe ASCII.
+- Added visible success, warning, and error notifications plus direct `1`/`2`/`3` workspace shortcuts.
+- Reduced nested framing and verified the interface at an 80x24 terminal size.
+
 ## [0.2.1] - 2026-07-16
 
 ### Changed

@@ -32,3 +32,4 @@ def test_model_specific_quantization():
     assert all(float(value).is_integer() for value in resolve_profile("1f53", "balanced"))
     assert len(resolve_profile("20dc", "bass")) == 5
     assert len(sparkline([6, 0, -6])) == 3
+    assert sparkline([6, 0, -6]).isascii()

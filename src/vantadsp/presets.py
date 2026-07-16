@@ -241,5 +241,6 @@ def profile_options() -> list[tuple[str, str]]:
 
 
 def sparkline(values: list[float]) -> str:
-    blocks = "▁▂▃▄▅▆▇█"
+    # ASCII keeps curves readable in legacy Windows consoles and remote shells.
+    blocks = ".:-=+*#@"
     return "".join(blocks[round((min(6.0, max(-6.0, value)) + 6.0) / 12.0 * (len(blocks) - 1))] for value in values)

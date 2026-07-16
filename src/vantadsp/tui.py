@@ -31,44 +31,47 @@ from .probe import probe_ble
 from .protocol import describe_frame, hex_bytes
 from .transport import BleTransport, scan_ble
 
-MODEL_OPTIONS = [(f"{model.get('deviceName')}  ·  {model.get('pid')}", str(model.get("pid"))) for model in all_models()]
+MODEL_OPTIONS = [(f"{model.get('deviceName')} / {model.get('pid')}", str(model.get("pid"))) for model in all_models()]
 
 
 class VantaDSPApp(App[None]):
     TITLE = "VANTADSP"
-    SUB_TITLE = "MONOCHROME BLUETOOTH / DSP WORKSTATION"
+    SUB_TITLE = "BLUETOOTH EQ CONTROL"
     CSS = """
     Screen { background: #000000; color: #eeeeee; }
     Header, Footer { background: #eeeeee; color: #000000; }
-    #status-strip { height: 5; padding: 0 1; }
-    .metric { width: 1fr; height: 4; border: tall #666666; padding: 0 1; margin-right: 1; }
-    #status-safety { margin-right: 0; }
+    #status-strip { height: 3; background: #111111; padding: 0 1; }
+    .metric { width: 1fr; height: 3; padding: 0 1; border-left: ascii #555555; }
+    #status-system { border-left: none; }
     #main-tabs { height: 1fr; }
     TabbedContent { background: #000000; }
-    TabPane { padding: 0 1; background: #000000; }
+    TabPane { padding: 0 1 1 1; background: #000000; }
     Tabs { background: #000000; color: #aaaaaa; }
     Tab.-active { background: #eeeeee; color: #000000; text-style: bold; }
-    #setup { height: 7; }
+    .guide { height: 2; color: #bbbbbb; padding: 0 1; background: #111111; }
+    #setup { height: 5; margin-top: 1; }
     #setup > Vertical { width: 1fr; margin-right: 1; }
     #setup > Vertical:last-of-type { margin-right: 0; }
     .field-label { color: #999999; }
-    Input, Select { background: #000000; color: #eeeeee; border: tall #666666; }
-    Input:focus, Select:focus { border: tall #ffffff; }
-    #devices { height: 1fr; border: tall #666666; background: #000000; }
-    #profile-panel { height: 9; padding: 0 1; border: tall #888888; }
+    Input, Select { background: #090909; color: #eeeeee; border: ascii #555555; }
+    Input:focus, Select:focus { border: ascii #ffffff; }
+    SelectOverlay, Toast { border: ascii #ffffff; }
+    #devices { height: 1fr; border: ascii #555555; background: #000000; }
+    #profile-panel { height: 9; padding: 1; background: #090909; }
     #profile-row { height: 3; }
     #profile-row Select { width: 2fr; margin-right: 1; }
     #profile-row Input { width: 3fr; }
     #curve { height: 2; color: #ffffff; text-style: bold; }
     #profile-info { color: #aaaaaa; }
-    #interlock { height: 4; padding: 0 1; border: tall #666666; }
-    .actions { height: 4; align-vertical: middle; }
-    .actions Button { min-width: 15; margin-right: 1; background: #111111; color: #eeeeee; border: tall #666666; }
-    .actions Button:hover, .actions Button:focus { background: #eeeeee; color: #000000; border: tall #ffffff; }
+    #safety-guide { margin-top: 1; }
+    #interlock { height: 3; padding: 0 1; background: #090909; align-vertical: middle; }
+    .actions { height: 3; align-vertical: middle; }
+    .actions Button { min-width: 18; margin-right: 1; background: #111111; color: #eeeeee; border: ascii #555555; }
+    .actions Button:hover, .actions Button:focus { background: #eeeeee; color: #000000; border: ascii #ffffff; }
     #apply { background: #eeeeee; color: #000000; text-style: bold; }
     #guard { width: 10; margin-left: 1; }
     #confirm { width: 13; }
-    #log { height: 1fr; border: tall #666666; background: #000000; color: #dddddd; }
+    #log { height: 1fr; border: ascii #555555; background: #000000; color: #dddddd; }
     """
     BINDINGS: ClassVar = [
         ("q", "quit", "Quit"),
@@ -76,6 +79,9 @@ class VantaDSPApp(App[None]):
         ("p", "probe", "Probe"),
         ("r", "read", "Read EQ"),
         ("v", "preview", "Preview"),
+        ("1", "device_tab", "Device"),
+        ("2", "eq_tab", "EQ"),
+        ("3", "activity_tab", "Activity"),
     ]
 
     def __init__(self, settings: Settings | None = None) -> None:
@@ -92,20 +98,30 @@ class VantaDSPApp(App[None]):
             yield Static("SAFETY\nWRITE LOCKED", id="status-safety", classes="metric")
         with TabbedContent(initial="device-tab", id="main-tabs"):
             with TabPane("01  DEVICE", id="device-tab"):
+                yield Static(
+                    "STEP 1  Scan for speakers.  STEP 2  Select a row and model.  STEP 3  Probe safely.",
+                    classes="guide",
+                )
                 with Horizontal(id="setup"):
                     with Vertical():
                         yield Label("BLE ADDRESS / DEVICE ID", classes="field-label")
                         yield Input(
-                            value=self.settings.last_address, placeholder="Scan, then select a row", id="address"
+                            value=self.settings.last_address,
+                            placeholder="Select a scan result or enter a device ID",
+                            id="address",
                         )
                     with Vertical():
                         yield Label("MODEL PROFILE", classes="field-label")
                         yield Select(MODEL_OPTIONS, value=self.settings.last_pid, allow_blank=False, id="pid")
                 yield DataTable(id="devices", cursor_type="row", zebra_stripes=False)
                 with Horizontal(classes="actions"):
-                    yield Button("01  SCAN", id="scan")
-                    yield Button("02  PROBE", id="probe")
+                    yield Button("S  SCAN DEVICES", id="scan")
+                    yield Button("P  PROBE SELECTED", id="probe")
             with TabPane("02  EQUALIZER", id="eq-tab"):
+                yield Static(
+                    "Choose a preset or edit gains. Preview is offline; Read and Apply connect to the speaker.",
+                    classes="guide",
+                )
                 with Vertical(id="profile-panel"):
                     yield Label("SOUND PROFILE", classes="field-label")
                     with Horizontal(id="profile-row"):
@@ -113,15 +129,24 @@ class VantaDSPApp(App[None]):
                         yield Input(id="gains", placeholder="Model-aware gains")
                     yield Static(id="curve")
                     yield Static(id="profile-info")
+                yield Static(
+                    "SAFE APPLY  Preview first, enable the lock, then type APPLY exactly.",
+                    id="safety-guide",
+                    classes="guide",
+                )
                 with Horizontal(id="interlock"):
-                    yield Label("WRITE INTERLOCK  ", classes="field-label")
+                    yield Label("ALLOW HARDWARE WRITE", classes="field-label")
                     yield Switch(value=False, id="guard")
                     yield Input(placeholder="TYPE APPLY", id="confirm")
                 with Horizontal(classes="actions"):
-                    yield Button("03  READ EQ", id="read")
-                    yield Button("04  PREVIEW", id="preview")
-                    yield Button("05  APPLY", id="apply")
+                    yield Button("R  READ CURRENT", id="read")
+                    yield Button("V  PREVIEW PACKET", id="preview")
+                    yield Button("APPLY TO SPEAKER", id="apply")
             with TabPane("03  ACTIVITY", id="activity-tab"):
+                yield Static(
+                    "Connection details, packet previews, replies, and errors appear below.",
+                    classes="guide",
+                )
                 yield RichLog(id="log", markup=True, wrap=True, highlight=False)
         yield Footer()
 
@@ -133,6 +158,14 @@ class VantaDSPApp(App[None]):
 
     def log_message(self, message: str) -> None:
         self.query_one("#log", RichLog).write(message)
+
+    def _show_tab(self, tab_id: str) -> None:
+        self.query_one("#main-tabs", TabbedContent).active = tab_id
+
+    def _report_error(self, operation: str, exc: Exception) -> None:
+        message = f"{type(exc).__name__}: {exc}"
+        self.log_message(f"ERROR   |  {operation}  |  {message}")
+        self.notify(message, title=f"{operation} failed", severity="error", timeout=7)
 
     def _status(
         self,
@@ -190,7 +223,7 @@ class VantaDSPApp(App[None]):
             )
         else:
             self.query_one("#gains", Input).value = ""
-            self.query_one("#curve", Static).update("CURVE  —  This APK declares no EQ controls for the selected PID")
+            self.query_one("#curve", Static).update("CURVE  -  This APK declares no EQ controls for the selected PID")
         self.query_one("#profile-info", Static).update(
             f"{profile.name.upper()}  /  {profile.description}  /  TAGS: {', '.join(profile.tags) or 'general'}"
         )
@@ -203,6 +236,7 @@ class VantaDSPApp(App[None]):
             name = row["name"] or "UNNAMED"
             self._status(device=f"SELECTED  {name}  {row['rssi']} dBm")
             self.log_message(f"SELECT  |  {name}  |  {address}")
+            self.notify(f"Selected {name}. Confirm the model, then probe.", title="Device selected")
 
     def on_select_changed(self, event: Select.Changed) -> None:
         if event.value is Select.BLANK:
@@ -226,11 +260,11 @@ class VantaDSPApp(App[None]):
                 + "  ".join(f"B{index + 1} {gain:+g}" for index, gain in enumerate(gains))
             )
         except ValueError:
-            self.query_one("#curve", Static).update("CUSTOM — invalid numeric gain list")
+            self.query_one("#curve", Static).update("CUSTOM - invalid numeric gain list")
 
     def on_switch_changed(self, event: Switch.Changed) -> None:
         if event.switch.id == "guard":
-            self._status(safety="ARMED — TYPE APPLY" if event.value else "WRITE LOCKED")
+            self._status(safety="ARMED - TYPE APPLY" if event.value else "WRITE LOCKED")
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         actions = {"scan": self.action_scan, "probe": self.action_probe, "read": self.action_read}
@@ -244,10 +278,19 @@ class VantaDSPApp(App[None]):
     def action_scan(self) -> None:
         self.scan_worker()
 
+    def action_device_tab(self) -> None:
+        self._show_tab("device-tab")
+
+    def action_eq_tab(self) -> None:
+        self._show_tab("eq-tab")
+
+    def action_activity_tab(self) -> None:
+        self._show_tab("activity-tab")
+
     @work(exclusive=True)
     async def scan_worker(self) -> None:
-        self._status(system="SCANNING BLE…")
-        self.log_message("SCAN    |  Listening for BLE advertisements…")
+        self._status(system="SCANNING BLE...")
+        self.log_message("SCAN    |  Listening for BLE advertisements...")
         try:
             rows = await scan_ble(self.settings.scan_seconds)
             table = self.query_one("#devices", DataTable)
@@ -262,11 +305,15 @@ class VantaDSPApp(App[None]):
                     key=row["address"],
                 )
             strongest = f"  |  strongest {rows[0]['rssi']} dBm" if rows else ""
-            self._status(system=f"READY — {len(rows)} DEVICES")
+            self._status(system=f"READY - {len(rows)} DEVICES")
             self.log_message(f"SCAN    |  Complete  |  {len(rows)} devices{strongest}")
+            self.notify(
+                f"Found {len(rows)} device(s). Select a row, confirm the model, then probe.",
+                title="Scan complete",
+            )
         except Exception as exc:
             self._status(system="SCAN FAILED")
-            self.log_message(f"ERROR   |  Scan  |  {type(exc).__name__}: {exc}")
+            self._report_error("Scan", exc)
 
     def action_probe(self) -> None:
         self.probe_worker()
@@ -276,7 +323,7 @@ class VantaDSPApp(App[None]):
         try:
             address, pid = self._address(), self._pid()
             self._save_context()
-            self._status(system="PROBING…", device="CONNECTING")
+            self._status(system="PROBING...", device="CONNECTING")
             self.log_message(f"PROBE   |  PID {pid}  |  Read-only multi-generation capability check")
             result = await probe_ble(
                 address,
@@ -293,14 +340,18 @@ class VantaDSPApp(App[None]):
             services = len(result.get("services", []))
             supported = [name for name, item in result["probes"].items() if item["status"] == "supported-response"]
             self._status(
-                system="READY — PROBE COMPLETE",
+                system="READY - PROBE COMPLETE",
                 device=f"ONLINE  FW {firmware}  {services} SERVICES",
                 protocol=f"{result['detected_eq_path']}  [{', '.join(supported) or 'none'}]",
             )
             self.log_message(json.dumps(result, ensure_ascii=False, indent=2))
+            self.notify(
+                f"Firmware {firmware}; EQ path {result['detected_eq_path']}",
+                title="Probe complete",
+            )
         except Exception as exc:
             self._status(system="PROBE FAILED", device="OFFLINE / ERROR")
-            self.log_message(f"ERROR   |  Probe  |  {type(exc).__name__}: {exc}")
+            self._report_error("Probe", exc)
 
     def action_read(self) -> None:
         self.read_worker()
@@ -310,7 +361,7 @@ class VantaDSPApp(App[None]):
         try:
             address, pid = self._address(), self._pid()
             path, frames = auto_read_frames(pid)
-            self._status(system="READING EQ…", protocol=path)
+            self._status(system="READING EQ...", protocol=path)
             self.log_message(f"READ    |  {path}  |  {len(frames)} frame(s)")
             replies: list[bytes] = []
             async with BleTransport(address, rx_uuid=self.settings.rx_uuid, tx_uuid=self.settings.tx_uuid) as transport:
@@ -318,10 +369,11 @@ class VantaDSPApp(App[None]):
                     replies.extend(await transport.transact(frame, self.settings.timeout))
             for reply in replies:
                 self.log_message(json.dumps(describe_frame(reply), ensure_ascii=False, indent=2))
-            self._status(system=f"READY — {len(replies)} REPLY")
+            self._status(system=f"READY - {len(replies)} REPLY")
+            self.notify(f"Received {len(replies)} reply frame(s).", title="EQ read complete")
         except Exception as exc:
             self._status(system="READ FAILED")
-            self.log_message(f"ERROR   |  Read  |  {type(exc).__name__}: {exc}")
+            self._report_error("Read", exc)
 
     def action_preview(self) -> None:
         try:
@@ -339,16 +391,23 @@ class VantaDSPApp(App[None]):
                 applied=False,
                 details={"profile": self._profile_key(), "path": path, "gains": gains},
             )
+            self.notify("Packet is ready. Review it in Activity before applying.", title="Preview complete")
         except Exception as exc:
             self._status(system="PREVIEW REJECTED")
             self.log_message(f"REJECT  |  Preview  |  {exc}")
+            self.notify(str(exc), title="Preview rejected", severity="warning")
 
     def apply_eq(self) -> None:
         guard = self.query_one("#guard", Switch).value
         phrase = self.query_one("#confirm", Input).value
         if not guard or phrase != "APPLY":
-            self._status(safety="BLOCKED — CHECK INTERLOCK")
+            self._status(safety="BLOCKED - CHECK INTERLOCK")
             self.log_message("BLOCK   |  Enable WRITE INTERLOCK and type APPLY exactly.")
+            self.notify(
+                "Enable ALLOW HARDWARE WRITE and type APPLY exactly.",
+                title="Write blocked",
+                severity="warning",
+            )
             return
         self.apply_worker()
 
@@ -358,7 +417,7 @@ class VantaDSPApp(App[None]):
             address, pid, gains = self._address(), self._pid(), self._gains()
             path, frames = auto_eq_frames(pid, gains)
             self._save_context()
-            self._status(system="WRITING EQ…", safety="LIVE WRITE IN PROGRESS")
+            self._status(system="WRITING EQ...", safety="LIVE WRITE IN PROGRESS")
             self.log_message(f"WRITE   |  {path}  |  profile={self._profile_key()}  |  gains={gains}")
             replies: list[bytes] = []
             async with BleTransport(address, rx_uuid=self.settings.rx_uuid, tx_uuid=self.settings.tx_uuid) as transport:
@@ -379,11 +438,12 @@ class VantaDSPApp(App[None]):
             )
             self._status(system="WRITE COMPLETE", safety="WRITE LOCKED")
             self.log_message(f"WRITE   |  Complete  |  {len(replies)} reply frame(s)  |  Audit record saved")
+            self.notify("EQ was written and the safety lock was restored.", title="Write complete")
             for reply in replies:
                 self.log_message(json.dumps(describe_frame(reply), ensure_ascii=False, indent=2))
         except Exception as exc:
             self._status(system="WRITE FAILED", safety="WRITE LOCKED")
-            self.log_message(f"ERROR   |  Apply  |  {type(exc).__name__}: {exc}")
+            self._report_error("Apply", exc)
         finally:
             self.query_one("#guard", Switch).value = False
             self.query_one("#confirm", Input).value = ""
