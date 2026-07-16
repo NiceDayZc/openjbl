@@ -18,24 +18,24 @@ VantaDSP is a safety-first Python toolkit and monochrome terminal interface for 
 
 ## Install
 
-Install the latest release from a cloned repository:
+Install the latest release from PyPI:
+
+```powershell
+python -m pip install vantadsp
+```
+
+To install from a cloned repository instead:
 
 ```powershell
 python -m pip install .
 ```
 
-For development, open PowerShell in the repository and use an editable installation:
+For development, use an editable installation with the QA toolchain:
 
 ```powershell
 py -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install -e ".[dev]"
-```
-
-The project is not published on PyPI yet. After a PyPI release, the installation command will be:
-
-```powershell
-python -m pip install vantadsp
 ```
 
 Launch the TUI:

@@ -2,6 +2,13 @@
 
 All notable changes follow Keep a Changelog style. This project uses semantic versioning while its public API stabilizes.
 
+## [0.2.1] - 2026-07-16
+
+### Changed
+
+- Rebranded the distribution, Python package, CLI, TUI, documentation, and repository as VantaDSP.
+- Published the project on PyPI with `pip install vantadsp` as the primary installation path.
+
 ## [0.2.0] - 2026-07-16
 
 ### Added
