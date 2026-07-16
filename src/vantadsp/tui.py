@@ -419,7 +419,12 @@ class VantaDSPApp(App[None]):
             self._status(system="READING EQ...", protocol=path)
             self.log_message(f"READ    |  {path}  |  {len(frames)} frame(s)")
             replies: list[bytes] = []
-            async with BleTransport(address, rx_uuid=self.settings.rx_uuid, tx_uuid=self.settings.tx_uuid) as transport:
+            async with BleTransport(
+                address,
+                service_uuid=self.settings.service_uuid,
+                rx_uuid=self.settings.rx_uuid,
+                tx_uuid=self.settings.tx_uuid,
+            ) as transport:
                 for frame in frames:
                     replies.extend(await transport.transact(frame, self.settings.timeout))
             for reply in replies:
@@ -473,7 +478,12 @@ class VantaDSPApp(App[None]):
             self._status(system="WRITING EQ...", safety="LIVE WRITE IN PROGRESS")
             self.log_message(f"WRITE   |  {path}  |  profile={self._profile_key()}  |  gains={gains}")
             replies: list[bytes] = []
-            async with BleTransport(address, rx_uuid=self.settings.rx_uuid, tx_uuid=self.settings.tx_uuid) as transport:
+            async with BleTransport(
+                address,
+                service_uuid=self.settings.service_uuid,
+                rx_uuid=self.settings.rx_uuid,
+                tx_uuid=self.settings.tx_uuid,
+            ) as transport:
                 for frame in frames:
                     replies.extend(await transport.transact(frame, self.settings.timeout))
             append_audit(

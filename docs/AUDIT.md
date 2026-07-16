@@ -1,14 +1,14 @@
 # Engineering, safety, and release audit
 
 Audit date: 2026-07-16
-Audited release candidate: `0.2.0`
+Audited release candidate: `0.2.2`
 
 ## Outcome
 
 | Gate | Result |
 |---|---|
-| Unit/integration/headless TUI tests | 37 passed |
-| Branch-aware coverage | 83% (minimum gate 65%) |
+| Unit/integration/headless TUI tests | 44 passed |
+| Full-package branch-aware coverage | 69% (minimum gate 65%) |
 | Ruff lint and formatting | pass |
 | mypy package type check | pass |
 | Bandit static security scan | pass; no findings after reviewed B105 filter-name false positive is configured globally |

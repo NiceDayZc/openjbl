@@ -66,12 +66,6 @@ source = ["vantadsp"]
 [tool.coverage.report]
 fail_under = 65
 show_missing = true
-omit = [
-  "src/vantadsp/cli.py",
-  "src/vantadsp/probe.py",
-  "src/vantadsp/transport.py",
-  "src/vantadsp/tui.py",
-]
 
 [tool.ruff]
 target-version = "py310"
