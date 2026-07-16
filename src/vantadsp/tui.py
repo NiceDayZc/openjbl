@@ -18,7 +18,6 @@ from textual.widgets import (
     RichLog,
     Select,
     Static,
-    Switch,
     TabbedContent,
     TabPane,
 )
@@ -59,8 +58,6 @@ class VantaDSPApp(App[None]):
     Select:focus > SelectCurrent { border: ascii #ffffff; }
     SelectCurrent .arrow { display: none; }
     Select > SelectOverlay { border: ascii #ffffff; }
-    Switch { border: ascii #555555; padding: 0 1; }
-    Switch:focus { border: ascii #ffffff; }
     Toast { width: 42; max-width: 40%; padding: 0 1; margin-top: 0; border: ascii #ffffff; }
     #devices { height: 1fr; border: ascii #555555; background: #000000; }
     #profile-panel { height: 9; padding: 1; background: #090909; }
@@ -69,14 +66,10 @@ class VantaDSPApp(App[None]):
     #profile-row Input { width: 3fr; }
     #curve { height: 2; color: #ffffff; text-style: bold; }
     #profile-info { color: #aaaaaa; }
-    #safety-guide { margin-top: 1; }
-    #interlock { height: 3; padding: 0 1; background: #090909; align-vertical: middle; }
     .actions { height: 3; align-vertical: middle; }
     .actions Button { min-width: 18; margin-right: 1; background: #111111; color: #eeeeee; border: ascii #555555; }
     .actions Button:hover, .actions Button:focus { background: #eeeeee; color: #000000; border: ascii #ffffff; }
     #apply { min-width: 22; background: #eeeeee; color: #000000; text-style: bold; }
-    #guard { width: 10; margin-left: 1; }
-    #confirm { width: 18; }
     #log { height: 1fr; border: ascii #555555; background: #000000; color: #dddddd; }
     """
     BINDINGS: ClassVar = [
@@ -101,7 +94,6 @@ class VantaDSPApp(App[None]):
             yield Static("SYSTEM\nREADY", id="status-system", classes="metric")
             yield Static("DEVICE\nNOT SELECTED", id="status-device", classes="metric")
             yield Static("PROTOCOL\nUNKNOWN", id="status-protocol", classes="metric")
-            yield Static("SAFETY\nWRITE LOCKED", id="status-safety", classes="metric")
         with TabbedContent(initial="device-tab", id="main-tabs"):
             with TabPane("01  DEVICE", id="device-tab"):
                 yield Static(
@@ -137,14 +129,9 @@ class VantaDSPApp(App[None]):
                     yield Static(id="curve")
                     yield Static(id="profile-info")
                 yield Static(
-                    "SAFE APPLY  Preview first, enable the lock, then type APPLY exactly.",
-                    id="safety-guide",
+                    "DIRECT APPLY  The button writes the selected profile immediately.",
                     classes="guide",
                 )
-                with Horizontal(id="interlock"):
-                    yield Label("ALLOW HARDWARE WRITE", classes="field-label")
-                    yield Switch(value=False, id="guard")
-                    yield Input(placeholder="TYPE APPLY", id="confirm")
                 with Horizontal(classes="actions"):
                     yield Button("R  READ CURRENT", id="read")
                     yield Button("V  PREVIEW PACKET", id="preview")
@@ -161,7 +148,7 @@ class VantaDSPApp(App[None]):
         table = self.query_one("#devices", DataTable)
         table.add_columns("NAME", "DETECTED MODEL", "PID", "RSSI", "ADDRESS")
         self._load_profile("balanced")
-        self.log_message("READY  |  Hardware writes are locked. Start with SCAN or select a known address.")
+        self.log_message("READY  |  Direct apply is enabled. Start with SCAN or select a known address.")
 
     def log_message(self, message: str) -> None:
         self.query_one("#log", RichLog).write(message)
@@ -180,9 +167,8 @@ class VantaDSPApp(App[None]):
         system: str | None = None,
         device: str | None = None,
         protocol: str | None = None,
-        safety: str | None = None,
     ) -> None:
-        values = {"system": system, "device": device, "protocol": protocol, "safety": safety}
+        values = {"system": system, "device": device, "protocol": protocol}
         for name, value in values.items():
             if value is not None:
                 self.query_one(f"#status-{name}", Static).update(f"{name.upper()}\n{value}")
@@ -286,14 +272,6 @@ class VantaDSPApp(App[None]):
             self._load_profile(str(event.value))
 
     def on_input_changed(self, event: Input.Changed) -> None:
-        if event.input.id == "confirm":
-            armed = self.query_one("#guard", Switch).value
-            if armed and event.value == "APPLY":
-                self._status(safety="ARMED - READY TO APPLY")
-                self.query_one("#safety-guide", Static).update(
-                    "READY  Review the profile, then press APPLY TO SPEAKER. This performs a live hardware write."
-                )
-            return
         if event.input.id != "gains" or not event.value.strip():
             return
         try:
@@ -304,15 +282,6 @@ class VantaDSPApp(App[None]):
             )
         except ValueError:
             self.query_one("#curve", Static).update("CUSTOM - invalid numeric gain list")
-
-    def on_switch_changed(self, event: Switch.Changed) -> None:
-        if event.switch.id == "guard":
-            self._status(safety="ARMED - TYPE APPLY" if event.value else "WRITE LOCKED")
-            self.query_one("#safety-guide", Static).update(
-                "ARMED  Type APPLY in the confirmation field to continue."
-                if event.value
-                else "SAFE APPLY  Preview first, enable the lock, then type APPLY exactly."
-            )
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         actions = {"scan": self.action_scan, "probe": self.action_probe, "read": self.action_read}
@@ -458,15 +427,6 @@ class VantaDSPApp(App[None]):
             self.notify(str(exc), title="Preview rejected", severity="warning")
 
     def apply_eq(self) -> None:
-        guard = self.query_one("#guard", Switch).value
-        phrase = self.query_one("#confirm", Input).value
-        if not guard or phrase != "APPLY":
-            self._status(safety="BLOCKED - CHECK INTERLOCK")
-            self.log_message("BLOCK   |  Enable WRITE INTERLOCK and type APPLY exactly.")
-            self.query_one("#safety-guide", Static).update(
-                "WRITE BLOCKED  Enable ALLOW HARDWARE WRITE and type APPLY exactly. Nothing was sent."
-            )
-            return
         self.apply_worker()
 
     @work(exclusive=True)
@@ -475,7 +435,7 @@ class VantaDSPApp(App[None]):
             address, pid, gains = self._address(), self._pid(), self._gains()
             path, frames = auto_eq_frames(pid, gains)
             self._save_context()
-            self._status(system="WRITING EQ...", safety="LIVE WRITE IN PROGRESS")
+            self._status(system="WRITING EQ...")
             self.log_message(f"WRITE   |  {path}  |  profile={self._profile_key()}  |  gains={gains}")
             replies: list[bytes] = []
             async with BleTransport(
@@ -499,17 +459,14 @@ class VantaDSPApp(App[None]):
                     "rx": [hex_bytes(reply) for reply in replies],
                 },
             )
-            self._status(system="WRITE COMPLETE", safety="WRITE LOCKED")
+            self._status(system="WRITE COMPLETE")
             self.log_message(f"WRITE   |  Complete  |  {len(replies)} reply frame(s)  |  Audit record saved")
-            self.notify("EQ was written and the safety lock was restored.", title="Write complete")
+            self.notify("EQ was written to the speaker.", title="Write complete")
             for reply in replies:
                 self.log_message(json.dumps(describe_frame(reply), ensure_ascii=False, indent=2))
         except Exception as exc:
-            self._status(system="WRITE FAILED", safety="WRITE LOCKED")
+            self._status(system="WRITE FAILED")
             self._report_error("Apply", exc)
-        finally:
-            self.query_one("#guard", Switch).value = False
-            self.query_one("#confirm", Input).value = ""
 
 
 def main() -> None:
