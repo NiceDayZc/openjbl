@@ -26,6 +26,11 @@ dependencies = [
   "textual>=8.2,<9",
 ]
 
+[project.urls]
+Homepage = "https://github.com/NiceDayZc/jbl-pc-control"
+Repository = "https://github.com/NiceDayZc/jbl-pc-control.git"
+Issues = "https://github.com/NiceDayZc/jbl-pc-control/issues"
+
 [project.optional-dependencies]
 dev = [
   "bandit>=1.8,<2",
