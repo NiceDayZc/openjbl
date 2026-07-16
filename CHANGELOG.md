@@ -13,6 +13,7 @@ All notable changes follow Keep a Changelog style. This project uses semantic ve
 - Added automatic JBL/PID selection from Harman company data, `DFFD`/`FDDF`/`FC69` service data, derived service UUIDs, unique names, and Windows paired-device metadata.
 - Replaced the TUI write interlock with direct apply while retaining model and gain validation.
 - Added pre-write state capture, write acknowledgement inspection, automatic read-back, per-band delta verification, transaction IDs, detailed Activity evidence, and explicit verified/mismatch/unverified outcomes.
+- Added automatic PyPI update checks/installations for TUI users, editable-install protection, and manual `check-update` / `update` CLI commands.
 
 ## [0.2.1] - 2026-07-16
 

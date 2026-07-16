@@ -11,7 +11,7 @@ from vantadsp.tui import VantaDSPApp
 
 @pytest.mark.asyncio
 async def test_tui_mounts_with_direct_apply():
-    app = VantaDSPApp(Settings(last_address="", last_pid="20e3"))
+    app = VantaDSPApp(Settings(last_address="", last_pid="20e3", auto_update=False))
     async with app.run_test(size=(80, 24)) as pilot:
         await pilot.pause()
         assert len(app.query_one("#devices", DataTable).columns) == 5
@@ -84,7 +84,7 @@ async def test_direct_apply_requires_ack_and_matching_readback(monkeypatch):
             raise AssertionError(frame.command)
 
     monkeypatch.setattr(tui_module, "BleTransport", FakeTransport)
-    app = VantaDSPApp(Settings(last_address="device-id", last_pid="20e3"))
+    app = VantaDSPApp(Settings(last_address="device-id", last_pid="20e3", auto_update=False))
     async with app.run_test(size=(100, 30)) as pilot:
         app.query_one("#gains", Input).value = "0, 0, 0, 0, 0, 0, 0"
         app.apply_eq()
