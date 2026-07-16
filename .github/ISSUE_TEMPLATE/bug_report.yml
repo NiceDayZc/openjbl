@@ -1,0 +1,34 @@
+name: Bug report
+description: Report a sanitized reproducible defect
+body:
+  - type: markdown
+    attributes:
+      value: Do not include Bluetooth addresses, pairing data, APKs, firmware, or unsanitized captures.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+    validations:
+      required: true
+  - type: input
+    id: platform
+    attributes:
+      label: OS and Python version
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: Model, PID, and firmware
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps and sanitized output
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true

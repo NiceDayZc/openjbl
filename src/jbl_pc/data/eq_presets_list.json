@@ -1,0 +1,54 @@
+{
+  "eqList": [
+    {
+      "name": "JBL\n SIGNATURE",
+      "description": "EQ Feature Description ",
+      "image": "ic_signature",
+      "homeImage": "ic_home_signature",
+      "defaultImage": "eq_signature",
+      "selectedImage": "selected_eq_signature",
+      "isSelected": false,
+      "theme2Image": "ic_jbl_signature_2"
+    },
+    {
+      "name": "ENERGETIC",
+      "description": "EQ Feature Description ",
+      "image": "ic_energetic",
+      "homeImage": "ic_home_energetic",
+      "defaultImage": "eq_energetic",
+      "selectedImage": "selected_eq_energetic",
+      "isSelected": false,
+      "theme2Image": "ic_energetic_2"
+    },
+    {
+      "name": "VOCAL",
+      "description": "EQ Feature Description ",
+      "image": "ic_vocal",
+      "homeImage": "ic_home_vocal",
+      "defaultImage": "eq_vocal",
+      "selectedImage": "selected_eq_vocal",
+      "isSelected": false,
+      "theme2Image": "ic_vocal_2"
+    },
+    {
+      "name": "EXTREME",
+      "description": "EQ Feature Description ",
+      "image": "ic_extreme",
+      "homeImage": "ic_home_extreme",
+      "defaultImage": "eq_extreme",
+      "selectedImage": "selected_eq_extreme",
+      "isSelected": false,
+      "theme2Image": "ic_party_2"
+    },
+    {
+      "name": "CUSTOM",
+      "description": "EQ Feature Description ",
+      "image": "ic_custom",
+      "homeImage": "ic_home_custom",
+      "defaultImage": "eq_custom",
+      "selectedImage": "selected_eq_custom",
+      "isSelected": false,
+      "theme2Image": "ic_home_custom"
+    }
+  ]
+}

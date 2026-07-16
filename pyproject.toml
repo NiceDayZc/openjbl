@@ -1,0 +1,89 @@
+[build-system]
+requires = ["setuptools>=83", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jbl-pc-control"
+version = "0.2.0"
+description = "Safe PC-side JBL Portable Bluetooth protocol, EQ, CLI, and TUI toolkit"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+keywords = ["jbl", "bluetooth", "ble", "equalizer", "reverse-engineering", "tui"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Operating System :: Microsoft :: Windows",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Multimedia :: Sound/Audio",
+]
+dependencies = [
+  "bleak>=0.22,<2",
+  "pyserial>=3.5,<4",
+  "textual>=8.2,<9",
+]
+
+[project.optional-dependencies]
+dev = [
+  "bandit>=1.8,<2",
+  "build>=1.2,<2",
+  "mypy>=1.17,<2",
+  "pip-audit>=2.9,<3",
+  "pytest>=9.0.3,<10",
+  "pytest-asyncio>=1,<2",
+  "pytest-cov>=6,<8",
+  "ruff>=0.12,<1",
+  "twine>=6,<7",
+  "types-pyserial>=3.5,<4",
+]
+
+[project.scripts]
+jblctl = "jbl_pc.cli:main"
+jbltui = "jbl_pc.tui:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+jbl_pc = ["data/*.json", "py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-markers --cov=jbl_pc --cov-report=term-missing"
+
+[tool.coverage.run]
+branch = true
+source = ["jbl_pc"]
+
+[tool.coverage.report]
+fail_under = 65
+show_missing = true
+omit = [
+  "src/jbl_pc/cli.py",
+  "src/jbl_pc/probe.py",
+  "src/jbl_pc/transport.py",
+  "src/jbl_pc/tui.py",
+]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+check_untyped_defs = true
+no_implicit_optional = true
+exclude = ["work/", "tools/"]
+
+[tool.bandit]
+exclude_dirs = ["tests", "work", "tools"]
+skips = ["B105"] # Filter enum names such as low_pass/high_pass are not credentials.

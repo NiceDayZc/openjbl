@@ -1,0 +1,33 @@
+# Build and Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+.venv/
+venv/
+.audit-venv/
+
+# Reverse-engineering inputs and generated output (do not redistribute)
+*.apk
+*.xapk
+work/
+tools/
+
+# Device captures may contain identifiers
+capture*.txt
+*.pcap
+*.pcapng
+audit*.jsonl
+.jblctl/
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

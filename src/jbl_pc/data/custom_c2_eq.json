@@ -1,0 +1,57 @@
+[
+  {
+  "categoryId": "CUSTOM",
+  "displayName": "CUSTOM",
+  "params": [
+    {
+      "type": "LOW_SHELF_FILTER",
+      "sampleRate": 48000,
+      "frequency": 125,
+      "gain": 0.0,
+      "qValue": 0.707
+    },
+    {
+      "type": "PEAKING_EQ",
+      "sampleRate": 48000,
+      "frequency": 250,
+      "gain": 0.0,
+      "qValue": 2
+    },
+    {
+      "type": "PEAKING_EQ",
+      "sampleRate": 48000,
+      "frequency": 500,
+      "gain": 0.0,
+      "qValue": 2
+    },
+    {
+      "type": "PEAKING_EQ",
+      "sampleRate": 48000,
+      "frequency": 1000,
+      "gain": 0.0,
+      "qValue": 2
+    },
+    {
+      "type": "PEAKING_EQ",
+      "sampleRate": 48000,
+      "frequency": 2000,
+      "gain": 0.0,
+      "qValue": 2
+    },
+    {
+      "type": "PEAKING_EQ",
+      "sampleRate": 48000,
+      "frequency": 4000,
+      "gain": 0.0,
+      "qValue": 2
+    },
+    {
+      "type": "HIGH_SHELF_FILTER",
+      "sampleRate": 48000,
+      "frequency": 8000,
+      "gain": 0.0,
+      "qValue": 0.707
+    }
+  ]
+}
+]

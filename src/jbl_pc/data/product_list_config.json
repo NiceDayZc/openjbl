@@ -1,0 +1,2394 @@
+{
+  "version": "00.00.01",
+  "remoteImageResVersion": "00.00.01",
+  "productList": [
+    {
+      "deviceName": "JBL Charge 5 Wi-Fi",
+      "pid": "208C",
+      "protocol": "PROTOCOL_BLE",
+      "orientation": "vertical",
+      "platform": "MTK",
+      "features": [
+        "REDIRECT_JBL_ONE"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "charge5pro/01_black.png",
+          "colorName": "Black",
+          "gradientS": "#F593CA",
+          "gradientE": "#26A4BD"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL Boombox 3 Wi-Fi",
+      "modelName": "JBL Boombox 3 Wi-Fi",
+      "pid": "2075",
+      "protocol": "PROTOCOL_BLE",
+      "orientation": "horizontal",
+      "platform": "MTK",
+      "features": [
+        "REDIRECT_JBL_ONE"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "boombox3pro/01_black.png",
+          "colorName": "Black",
+          "gradientS": "#F593CA",
+          "gradientE": "#26A4BD"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL Pulse 5",
+      "pid": "2050",
+      "platform": "Vimicro",
+      "protocol": "PROTOCOL_GATT_BR_EDR",
+      "otaUrl": "pulse5/pulse5_ota.json",
+      "autoUpgradeUrl": "pulse5/pulse5_auto_upgrade_ota.json",
+      "orientation": "vertical",
+      "extraViewType": "com.harman.jbl.portable.ui.fragments.LightShowPulse5Fragment",
+      "qsgUrl": "https://harman.widen.net/s/hpqsbwnwrr/pa_jbl_pulse-5_qsg_sop_global",
+      "eqConfig": "pulse5_preset_eq.json",
+      "presetEqPath": "pulse5_preset_eq.json",
+      "features": [
+        "LED_PACKAGE_SUPPORT",
+        "LED_BRIGHTNESS_SUPPORT",
+        "LED_MOVEMENT_SPEED_SUPPORT",
+        "EQ_BALANCE_SUPPORT",
+        "LED_AMBIENT_SOUND_SUPPORT",
+        "FEEDBACK_SUPPORT",
+        "FACTORY_RESET_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "pulse5/01_black.png",
+          "colorName": "Black",
+          "gradientS": "#FF8064",
+          "gradientE": "#CCFFDC7E"
+        },
+        "01": {
+          "img": "pulse5/01_black.png",
+          "colorName": "Black",
+          "gradientS": "#FF8064",
+          "gradientE": "#CCFFDC7E"
+        },
+        "02": {
+          "img": "pulse5/02_white.png",
+          "colorName": "White",
+          "gradientS": "#F593CA",
+          "gradientE": "#26A4BD"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL BoomBox 3",
+      "pid": "206d",
+      "platform": "Vimicro",
+      "protocol": "PROTOCOL_GATT_BR_EDR",
+      "otaUrl": "boombox3/boombox3_ota.json",
+      "autoUpgradeUrl": "boombox3/boombox3_auto_upgrade_ota.json",
+      "orientation": "horizontal",
+      "qsgUrl": "https://harman.widen.net/s/zpsljcpct5/pa_jbl_boombox-3_qsg_global_sop",
+      "features": [
+        "FEEDBACK_SUPPORT",
+        "EQ_BALANCE_SUPPORT",
+        "AURACAST_SUPPORT",
+        "HORIZONTAL_DEVICE",
+        "PARTYBOOST_BUTTON_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "boombox3/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "boombox3/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "08": {
+          "img": "boombox3/08_camo.png",
+          "colorName": "Squad",
+          "gradientS": "#C0C4B7",
+          "gradientE": "#3A412C"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL BoomBox 4",
+      "pid": "214e",
+      "platform": "Vimicro",
+      "protocol": "PROTOCOL_BLE",
+      "orientation": "vertical",
+      "dynamicOTAUrl": "true",
+      "qsgUrl": "https://harman.widen.net/s/jg9dvg7lvp/pa_jbl_boombox-4_qsg_global_sop_v6",
+      "eqConfig": "flip7_preset_eq.json",
+      "playTimeBoostConfig": "xtreme4_play_time_boost_eq.json",
+      "presetEqPath": "flip7_preset_eq.json",
+      "features": [
+        "FEEDBACK_SUPPORT",
+        "PRESET_EQ",
+        "NON_PARTY_BOOST_SUPPORT",
+        "AURACAST_SUPPORT",
+        "ONE_TOUCH_BACK_SUPPORT",
+        "DEVICE_USAGE_SUMMARY_SUPPORT",
+        "BLE_DISCOVERY_CONNECT_ONLY",
+        "PLAY_TIME_BOOST",
+        "FACTORY_RESET_SUPPORT",
+        "HORIZONTAL_DEVICE",
+        "SQ_SUPPORT",
+        "7_BANDS_EQ",
+        "BASS_BOOST_SUPPORT",
+        "LE_AUDIO_CONNECTION_SUPPORT",
+        "PROTOCOL_4"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "boombox4/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "boombox4/01_white.png",
+          "colorName": "White",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "1a": {
+          "img": "boombox4/1a_camo.png",
+          "colorName": "Squad",
+          "gradientS": "#C0C4B7",
+          "gradientE": "#3A412C"
+        },
+        "02": {
+          "img": "boombox4/02_blue.png",
+          "colorName": "Blue",
+          "gradientS": "#ADCBD8",
+          "gradientE": "#1A1F50"
+        },
+        "14": {
+          "img": "boombox4/14_brown.png",
+          "colorName": "Brown",
+          "gradientS": "#E1D2B7",
+          "gradientE": "#956200"
+        },
+        "1f": {
+          "img": "boombox4/1f_orange.png",
+          "colorName": "Orange",
+          "gradientS": "#E1D2B7",
+          "gradientE": "#956200"
+        },
+        "05": {
+          "img": "boombox4/05_purple.png",
+          "colorName": "Purple",
+          "gradientS": "#C6B7D9",
+          "gradientE": "#5A3A8C"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL Grip",
+      "pid": "2132",
+      "platform": "Vimicro",
+      "protocol": "PROTOCOL_BLE",
+      "orientation": "vertical",
+      "dynamicOTAUrl": "true",
+      "qsgUrl": "https://harman.widen.net/s/wpbkm8glzt/pa_jbl_grip_qsg_global_sop_v5_online",
+      "eqConfig": "flip7_preset_eq.json",
+      "playTimeBoostConfig": "xtreme4_play_time_boost_eq.json",
+      "presetEqPath": "flip7_preset_eq.json",
+      "features": [
+        "FEEDBACK_SUPPORT",
+        "PRESET_EQ",
+        "NON_PARTY_BOOST_SUPPORT",
+        "AURACAST_SUPPORT",
+        "ONE_TOUCH_BACK_SUPPORT",
+        "DEVICE_USAGE_SUMMARY_SUPPORT",
+        "BLE_DISCOVERY_CONNECT_ONLY",
+        "FACTORY_RESET_SUPPORT",
+        "PLAY_TIME_BOOST",
+        "SQ_SUPPORT",
+        "FACTORY_RESET_SUPPORT",
+        "LIGHT_SHOW",
+        "BRIGHTNESS",
+        "TEMPO",
+        "TEMPERATURE",
+        "COLOR_MODE_PRESETS",
+        "7_BANDS_EQ",
+        "AMBIENT_SOUNDS",
+        "PROTOCOL_4"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "grip/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "02": {
+          "img": "grip/02_blue.png",
+          "colorName": "Blue",
+          "gradientS": "#ADCBD8",
+          "gradientE": "#1A1F50"
+        },
+        "1a": {
+          "img": "grip/1a_squad.png",
+          "colorName": "Squad",
+          "gradientS": "#C0C4B7",
+          "gradientE": "#3A412C"
+        },
+
+        "04": {
+          "img": "grip/04_green.png",
+          "colorName": "Green",
+          "gradientS": "#BAC0AD",
+          "gradientE": "#3A412C"
+        },
+        "1c": {
+          "img": "grip/1c_peachOrange.png",
+          "colorName": "PeachOrange",
+          "gradientS": "#FE6E2C",
+          "gradientE": "#F9D3C1"
+        },
+        "05": {
+          "img": "grip/05_purple.png",
+          "colorName": "Purple",
+          "gradientS": "#C6B7D9",
+          "gradientE": "#5A3A8C"
+        },
+        "03": {
+          "img": "grip/03_red.png",
+          "colorName": "Red",
+          "gradientS": "#E1D1D6",
+          "gradientE": "#8D5260"
+        },
+        "19": {
+          "img": "grip/19_rose.png",
+          "colorName": "Rose",
+          "gradientS": "#E07784",
+          "gradientE": "#F3DEE5"
+        },
+        "1b": {
+          "img": "grip/1b_turquoise.png",
+          "colorName": "Turquoise",
+          "gradientS": "#AEE6DB",
+          "gradientE": "#28605E"
+        },
+        "01": {
+          "img": "grip/01_white.png",
+          "colorName": "White",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "18": {
+          "img": "grip/18_yellow.png",
+          "colorName": "Yellow",
+          "gradientS": "#FFD675",
+          "gradientE": "#F0EADD"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL GO 5",
+      "pid": "2168",
+      "platform": "Vimicro",
+      "protocol": "PROTOCOL_BLE",
+      "orientation": "vertical",
+      "dynamicOTAUrl": "true",
+      "qsgUrl": "https://harman.widen.net/s/f6dw95hdzf/pa_jbl_go-5_qsg_global_sop_v6_online",
+      "eqConfig": "flip7_preset_eq.json",
+      "playTimeBoostConfig": "xtreme4_play_time_boost_eq.json",
+      "presetEqPath": "flip7_preset_eq.json",
+      "features": [
+        "FEEDBACK_SUPPORT",
+        "PRESET_EQ",
+        "NON_PARTY_BOOST_SUPPORT",
+        "AURACAST_SUPPORT",
+        "ONE_TOUCH_BACK_SUPPORT",
+        "DEVICE_USAGE_SUMMARY_SUPPORT",
+        "BLE_DISCOVERY_CONNECT_ONLY",
+        "FACTORY_RESET_SUPPORT",
+        "PLAY_TIME_BOOST",
+        "SQ_SUPPORT",
+        "DUAL_LLS_SUPPORT",
+        "FACTORY_RESET_SUPPORT",
+        "LIGHT_SHOW",
+        "7_BANDS_EQ",
+        "PROTOCOL_4",
+        "AIR_TOUCH_SUPPORT",
+        "AUTO_POWER_OFF_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "go5/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "02": {
+          "img": "go5/02_blue.png",
+          "colorName": "Blue",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "1a": {
+          "img": "go5/1a_squad.png",
+          "colorName": "Squad",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "1c": {
+          "img": "go5/1c_peachOrange.png",
+          "colorName": "PeachOrange",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "05": {
+          "img": "go5/05_purple.png",
+          "colorName": "Purple",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "03": {
+          "img": "go5/03_red.png",
+          "colorName": "Red",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "19": {
+          "img": "go5/19_rose.png",
+          "colorName": "Rose",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "1b": {
+          "img": "go5/1b_turquoise.png",
+          "colorName": "Turquoise",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "go5/01_white.png",
+          "colorName": "White",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "18": {
+          "img": "go5/18_yellow.png",
+          "colorName": "Yellow",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL Xtreme 5",
+      "pid": "2169",
+      "platform": "Vimicro",
+      "protocol": "PROTOCOL_BLE",
+      "orientation": "vertical",
+      "dynamicOTAUrl": "true",
+      "qsgUrl": "https://harman.widen.net/s/dmqrtclrnl/pa_jbl_xtreme-5_qsg_global_sop_v13_online",
+      "eqConfig": "flip7_preset_eq.json",
+      "playTimeBoostConfig": "xtreme4_play_time_boost_eq.json",
+      "presetEqPath": "flip7_preset_eq.json",
+      "features": [
+        "FEEDBACK_SUPPORT",
+        "PRESET_EQ",
+        "NON_PARTY_BOOST_SUPPORT",
+        "AURACAST_SUPPORT",
+        "HORIZONTAL_DEVICE",
+        "ONE_TOUCH_BACK_SUPPORT",
+        "DEVICE_USAGE_SUMMARY_SUPPORT",
+        "BLE_DISCOVERY_CONNECT_ONLY",
+        "FACTORY_RESET_SUPPORT",
+        "PLAY_TIME_BOOST",
+        "SQ_SUPPORT",
+        "FACTORY_RESET_SUPPORT",
+        "LIGHT_SHOW",
+        "COLOR_MODE",
+        "7_BANDS_EQ",
+        "PROTOCOL_4",
+        "AUTO_POWER_OFF_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "xtreme5/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "02": {
+          "img": "xtreme5/02_blue.png",
+          "colorName": "Blue",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "1a": {
+          "img": "xtreme5/1a_squad.png",
+          "colorName": "Squad",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL Flip 6",
+      "pid": "204f",
+      "platform": "Vimicro",
+      "protocol": "PROTOCOL_GATT_BR_EDR",
+      "otaUrl": "flip6/flip6_ota.json",
+      "autoUpgradeUrl": "flip6/flip6_auto_upgrade_ota.json",
+      "orientation": "vertical",
+      "qsgUrl": "https://harman.widen.net/s/t9bxvxprtl/pa_jbl_flip-6_qsg_global_sop_multilanguage",
+      "features": [
+        "FEEDBACK_SUPPORT",
+        "EQ_BALANCE_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "flip6/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "flip6/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "02": {
+          "img": "flip6/02_red.png",
+          "colorName": "Red",
+          "gradientS": "#E1D1D6",
+          "gradientE": "#8D5260"
+        },
+        "03": {
+          "img": "flip6/03_blue.png",
+          "colorName": "Blue",
+          "gradientS": "#ADCBD8",
+          "gradientE": "#1A1F50"
+        },
+        "04": {
+          "img": "flip6/04_white.png",
+          "colorName": "White",
+          "gradientS": "#E0E0E0",
+          "gradientE": "#AAACAA"
+        },
+        "05": {
+          "img": "flip6/05_green.png",
+          "colorName": "Green",
+          "gradientS": "#C0C4B7",
+          "gradientE": "#3A412C"
+        },
+        "07": {
+          "img": "flip6/07_grey.png",
+          "colorName": "Grey",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "09": {
+          "img": "flip6/09_teal.png",
+          "colorName": "Teal",
+          "gradientS": "#AEE6DB",
+          "gradientE": "#28605E"
+        },
+        "10": {
+          "img": "flip6/10_pink.png",
+          "colorName": "Pink",
+          "gradientS": "#E1D1D6",
+          "gradientE": "#8D5260"
+        },
+        "13": {
+          "img": "flip6/13_camo.png",
+          "colorName": "Black Camouflage",
+          "gradientS": "#C0C4B7",
+          "gradientE": "#3A412C"
+        },
+        "14": {
+          "img": "flip6/14_mg.png",
+          "colorName": "Martin Garrix",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL Charge 5",
+      "pid": "2040",
+      "platform": "Vimicro",
+      "protocol": "PROTOCOL_BLE",
+      "otaUrl": "charge5/charge5_ota.json",
+      "autoUpgradeUrl": "charge5/charge5_auto_upgrade_ota.json",
+      "orientation": "horizontal",
+      "qsgUrl": "https://harman.widen.net/s/qgmvmrvztt/pa_jbl_charge-5_qsg_global",
+      "features": [
+        "FEEDBACK_SUPPORT",
+        "EQ_BALANCE_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "charge5/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "charge5/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "02": {
+          "img": "charge5/02_red.png",
+          "colorName": "Red",
+          "gradientS": "#E1D1D6",
+          "gradientE": "#8D5260"
+        },
+        "03": {
+          "img": "charge5/03_blue.png",
+          "colorName": "Blue",
+          "gradientS": "#ADCBD8",
+          "gradientE": "#1A1F50"
+        },
+        "04": {
+          "img": "charge5/04_white.png",
+          "colorName": "White",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "05": {
+          "img": "charge5/05_green.png",
+          "colorName": "Green",
+          "gradientS": "#C0C4B7",
+          "gradientE": "#3A412C"
+        },
+        "07": {
+          "img": "charge5/07_grey.png",
+          "colorName": "Grey",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "09": {
+          "img": "charge5/09_teal.png",
+          "colorName": "Teal",
+          "gradientS": "#AEE6DB",
+          "gradientE": "#28605E"
+        },
+        "10": {
+          "img": "charge5/10_pink.png",
+          "colorName": "Pink",
+          "gradientS": "#E1D1D6",
+          "gradientE": "#8D5260"
+        },
+        "12": {
+          "img": "charge5/12_tml.png",
+          "colorName": "Tomorrowland",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "13": {
+          "img": "charge5/13_camo.png",
+          "colorName": "Black Camouflage",
+          "gradientS": "#C0C4B7",
+          "gradientE": "#3A412C"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL Xtreme 3",
+      "pid": "202f",
+      "platform": "Vimicro",
+      "protocol": "PROTOCOL_BLE",
+      "otaUrl": "xtreme3/xtreme3_ota.json",
+      "autoUpgradeUrl": "xtreme3/xtreme3_auto_upgrade_ota.json",
+      "orientation": "horizontal",
+      "qsgUrl": "https://harman.widen.net/s/dtqnzmkbdx/pa_jbl_xtreme-3_qsg_global_cr_v14_online",
+      "features": [
+        "FEEDBACK_SUPPORT",
+        "EQ_BALANCE_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "xtreme3/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "xtreme3/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "03": {
+          "img": "xtreme3/03_blue.png",
+          "colorName": "Blue",
+          "gradientS": "#ADCBD8",
+          "gradientE": "#1A1F50"
+        },
+        "07": {
+          "img": "xtreme3/07_grey.png",
+          "colorName": "Grey",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "08": {
+          "img": "xtreme3/08_camo.png",
+          "colorName": "Squad",
+          "gradientS": "#C0C4B7",
+          "gradientE": "#3A412C"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL BoomBox 2",
+      "pid": "1f53",
+      "platform": "Vimicro",
+      "protocol": "PROTOCOL_GATT_BR_EDR",
+      "otaUrl": "boombox2/boombox2_ota.json",
+      "autoUpgradeUrl": "boombox2/boombox2_auto_upgrade_ota.json",
+      "orientation": "horizontal",
+      "qsgUrl": "https://harman.widen.net/s/mfblhvrzwk/pa_jbl_boombox-2_qsg_global_cr_v15_online",
+      "features": [
+        "FEEDBACK_SUPPORT",
+        "EQ_BALANCE_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "boombox2/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "boombox2/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "08": {
+          "img": "boombox2/08_camo.png",
+          "colorName": "Squad",
+          "gradientS": "#C0C4B7",
+          "gradientE": "#3A412C"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL Pulse 4",
+      "pid": "1f56",
+      "platform": "Vimicro",
+      "protocol": "PROTOCOL_BLE",
+      "otaUrl": "pulse4/pulse4_ota.json",
+      "autoUpgradeUrl": "pulse4/pulse4_auto_upgrade_ota.json",
+      "orientation": "vertical",
+      "extraViewType": "com.harman.jbl.portable.ui.fragments.LightShowPulse4Fragment",
+      "qsgUrl": "https://harman.widen.net/s/lh6x7zc7zf/pa_jbl_pulse-4_qsg_cr_v8_online",
+      "features": [
+        "FEEDBACK_SUPPORT",
+        "LED_SUPPORT",
+        "BRIGHTNESS_STATUS_SUPPORT",
+        "BRIGHTNESS_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "pulse4/01_black.png",
+          "colorName": "Black",
+          "gradientS": "#FF8064",
+          "gradientE": "#CCFFDC7E"
+        },
+        "01": {
+          "img": "pulse4/01_black.png",
+          "colorName": "Black",
+          "gradientS": "#FF8064",
+          "gradientE": "#CCFFDC7E"
+        },
+        "02": {
+          "img": "pulse4/02_white.png",
+          "colorName": "White",
+          "gradientS": "#FF8064",
+          "gradientE": "#CCFFDC7E"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL Flip 5",
+      "pid": "1f31",
+      "platform": "Vimicro",
+      "protocol": "PROTOCOL_BLE",
+      "otaUrl": "flip5/flip5_ota.json",
+      "autoUpgradeUrl": "flip5/flip5_auto_upgrade_ota.json",
+      "orientation": "vertical",
+      "qsgUrl": "https://harman.widen.net/s/hd8srtwmfx/pa_jbl_flip-5_qsg_global_cr_v12_online",
+      "features": [
+        "FEEDBACK_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "flip5/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "flip5/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "02": {
+          "img": "flip5/02_red.png",
+          "colorName": "Red",
+          "gradientS": "#E1D1D6",
+          "gradientE": "#8D5260"
+        },
+        "03": {
+          "img": "flip5/03_blue.png",
+          "colorName": "Blue",
+          "gradientS": "#ADCBD8",
+          "gradientE": "#1A1F50"
+        },
+        "04": {
+          "img": "flip5/04_white.png",
+          "colorName": "White",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "05": {
+          "img": "flip5/05_green.png",
+          "colorName": "Green",
+          "gradientS": "#C0C4B7",
+          "gradientE": "#3A412C"
+        },
+        "06": {
+          "img": "flip5/06_ocra.png",
+          "colorName": "Mustard Yellow",
+          "gradientS": "#E1D2B7",
+          "gradientE": "#956200"
+        },
+        "07": {
+          "img": "flip5/07_gray.png",
+          "colorName": "Grey",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "08": {
+          "img": "flip5/08_sand.png",
+          "colorName": "Sand",
+          "gradientS": "#E1D2B7",
+          "gradientE": "#956200"
+        },
+        "09": {
+          "img": "flip5/09_teal.png",
+          "colorName": "Teal",
+          "gradientS": "#AEE6DB",
+          "gradientE": "#28605E"
+        },
+        "10": {
+          "img": "flip5/10_pink.png",
+          "colorName": "Pink",
+          "gradientS": "#E1D1D6",
+          "gradientE": "#8D5260"
+        },
+        "11": {
+          "img": "flip5/11_blackstar.png",
+          "colorName": "Blackstar",
+          "gradientS": "#BFBFBF",
+          "gradientE": "#402E22"
+        },
+        "12": {
+          "img": "flip5/12_tommorrowland.png",
+          "colorName": "Tomorrowland",
+          "gradientS": "#E1D2B7",
+          "gradientE": "#956200"
+        },
+        "13": {
+          "img": "flip5/13_camo.png",
+          "colorName": "Squad",
+          "gradientS": "#C0C4B7",
+          "gradientE": "#3A412C"
+        },
+        "14": {
+          "img": "flip5/14_ecoblue.png",
+          "colorName": "ECOBLU",
+          "gradientS": "#ADCBD8",
+          "gradientE": "#1A1F50"
+        },
+        "15": {
+          "img": "flip5/15_ecogreen.png",
+          "colorName": "ECOGRN",
+          "gradientS": "#AEE6DB",
+          "gradientE": "#28605E"
+        },
+        "16": {
+          "img": "flip5/16_whitecamo.png",
+          "colorName": "White Camouflage",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL Charge 4(CSR)",
+      "pid": "1f17",
+      "platform": "CSR",
+      "protocol": "PROTOCOL_BLE",
+      "otaUrl": "charge4/charge4_csr_ota.json",
+      "orientation": "horizontal",
+      "qsgUrl": "https://harman.widen.net/s/7jt5gptgxp/jbl_charge-4_qsg_sop_global",
+      "features": [
+        "FEEDBACK_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "charge4/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "charge4/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "02": {
+          "img": "charge4/02_red.png",
+          "colorName": "Red",
+          "gradientS": "#FFAFA7",
+          "gradientE": "#772921"
+        },
+        "03": {
+          "img": "charge4/03_blue.png",
+          "colorName": "Blue",
+          "gradientS": "#9EBECC",
+          "gradientE": "#32404B"
+        },
+        "04": {
+          "img": "charge4/04_white.png",
+          "colorName": "White",
+          "gradientS": "#E0E0E0",
+          "gradientE": "#AAACAA"
+        },
+        "05": {
+          "img": "charge4/05_green.png",
+          "colorName": "Green",
+          "gradientS": "#BAC0AD",
+          "gradientE": "#3A412C"
+        },
+        "06": {
+          "img": "charge4/06_ocra.png",
+          "colorName": "Mustard Yellow",
+          "gradientS": "#DAC39C",
+          "gradientE": "#956200"
+        },
+        "07": {
+          "img": "charge4/07_gray.png",
+          "colorName": "Grey",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "08": {
+          "img": "charge4/08_desert.png",
+          "colorName": "Sand",
+          "gradientS": "#C5BBAD",
+          "gradientE": "#735B39"
+        },
+        "09": {
+          "img": "charge4/09_teal.png",
+          "colorName": "Teal",
+          "gradientS": "#AAE2D8",
+          "gradientE": "#326C6B"
+        },
+        "10": {
+          "img": "charge4/10_pink.png",
+          "colorName": "Pink",
+          "gradientS": "#E1D1D6",
+          "gradientE": "#8D5260"
+        },
+        "11": {
+          "img": "charge4/11_squad.png",
+          "colorName": "Squad",
+          "gradientS": "#8C8C8C",
+          "gradientE": "#313131"
+        },
+        "12": {
+          "img": "charge4/12_magenta.png",
+          "colorName": "Magenta",
+          "gradientS": "#FFB1E3",
+          "gradientE": "#770A5D"
+        },
+        "13": {
+          "img": "charge4/13_camo.png",
+          "colorName": "Black Camouflage",
+          "gradientS": "#7D9B73",
+          "gradientE": "#553832"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL Charge 4(QCC)",
+      "pid": "1f29",
+      "platform": "QCC",
+      "protocol": "PROTOCOL_BLE",
+      "otaUrl": "charge4/charge4_qcc_ota.json",
+      "orientation": "horizontal",
+      "qsgUrl": "https://harman.widen.net/s/7jt5gptgxp/jbl_charge-4_qsg_sop_global",
+      "features": [
+        "FEEDBACK_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "charge4/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "charge4/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "02": {
+          "img": "charge4/02_red.png",
+          "colorName": "Red",
+          "gradientS": "#FFAFA7",
+          "gradientE": "#772921"
+        },
+        "03": {
+          "img": "charge4/03_blue.png",
+          "colorName": "Blue",
+          "gradientS": "#9EBECC",
+          "gradientE": "#32404B"
+        },
+        "04": {
+          "img": "charge4/04_white.png",
+          "colorName": "White",
+          "gradientS": "#E0E0E0",
+          "gradientE": "#AAACAA"
+        },
+        "05": {
+          "img": "charge4/05_green.png",
+          "colorName": "Green",
+          "gradientS": "#BAC0AD",
+          "gradientE": "#3A412C"
+        },
+        "06": {
+          "img": "charge4/06_ocra.png",
+          "colorName": "Mustard Yellow",
+          "gradientS": "#DAC39C",
+          "gradientE": "#956200"
+        },
+        "07": {
+          "img": "charge4/07_gray.png",
+          "colorName": "Grey",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "08": {
+          "img": "charge4/08_desert.png",
+          "colorName": "Sand",
+          "gradientS": "#C5BBAD",
+          "gradientE": "#735B39"
+        },
+        "09": {
+          "img": "charge4/09_teal.png",
+          "colorName": "Teal",
+          "gradientS": "#AAE2D8",
+          "gradientE": "#326C6B"
+        },
+        "10": {
+          "img": "charge4/10_pink.png",
+          "colorName": "Pink",
+          "gradientS": "#E1D1D6",
+          "gradientE": "#8D5260"
+        },
+        "11": {
+          "img": "charge4/11_squad.png",
+          "colorName": "Squad",
+          "gradientS": "#8C8C8C",
+          "gradientE": "#313131"
+        },
+        "12": {
+          "img": "charge4/12_magenta.png",
+          "colorName": "Magenta",
+          "gradientS": "#FFB1E3",
+          "gradientE": "#770A5D"
+        },
+        "13": {
+          "img": "charge4/13_camo.png",
+          "colorName": "Black Camouflage",
+          "gradientS": "#7D9B73",
+          "gradientE": "#553832"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL Pulse 3",
+      "pid": "1ed2",
+      "platform": "CSR",
+      "protocol": "PROTOCOL_BLE",
+      "otaUrl": "pulse3/pulse3_ota.json",
+      "orientation": "vertical",
+      "extraViewType": "com.harman.jbl.portable.ui.fragments.LightShowPulse3Fragment",
+      "qsgUrl": "https://harman.widen.net/s/mxz96jqbwz/jbl_pulse_3_qsg",
+      "features": [
+        "MFB_SUPPORT",
+        "HFP_SUPPORT",
+        "FEEDBACK_SUPPORT",
+        "LED_SUPPORT",
+        "BRIGHTNESS_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "pulse3/01_black.png",
+          "colorName": "Black",
+          "gradientS": "#FF98B7",
+          "gradientE": "#0064AC"
+        },
+        "01": {
+          "img": "pulse3/01_black.png",
+          "colorName": "Black",
+          "gradientS": "#FF98B7",
+          "gradientE": "#0064AC"
+        },
+        "02": {
+          "img": "pulse3/02_white.png",
+          "colorName": "White",
+          "gradientS": "#FF98B7",
+          "gradientE": "#0064AC"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL BoomBox(CSR)",
+      "pid": "1ee7",
+      "platform": "CSR",
+      "protocol": "PROTOCOL_BLE",
+      "otaUrl": "boombox/boombox_csr_ota.json",
+      "orientation": "horizontal",
+      "qsgUrl": "https://harman.widen.net/s/hhghkh6hf9/jbl_boombox_qsg_global",
+      "features": [
+        "MFB_SUPPORT",
+        "HFP_SUPPORT",
+        "FEEDBACK_SUPPORT",
+        "EQ_OUTDOOR_INDOOR_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "boombox/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "boombox/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "02": {
+          "img": "boombox/02_green_forest.png",
+          "colorName": "Forest Green",
+          "gradientS": "#BAC0AD",
+          "gradientE": "#3A412C"
+        },
+        "08": {
+          "img": "boombox/08_squad.png",
+          "colorName": "Squad",
+          "gradientS": "#BEC3BC",
+          "gradientE": "#454932"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL BoomBox(QCC)",
+      "pid": "1f27",
+      "platform": "QCC",
+      "protocol": "PROTOCOL_BLE",
+      "otaUrl": "boombox/boombox_qcc_ota.json",
+      "orientation": "horizontal",
+      "qsgUrl": "https://harman.widen.net/s/hhghkh6hf9/jbl_boombox_qsg_global",
+      "features": [
+        "MFB_SUPPORT",
+        "HFP_SUPPORT",
+        "FEEDBACK_SUPPORT",
+        "EQ_OUTDOOR_INDOOR_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "boombox/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "boombox/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "02": {
+          "img": "boombox/02_green_forest.png",
+          "colorName": "Forest Green",
+          "gradientS": "#BAC0AD",
+          "gradientE": "#3A412C"
+        },
+        "08": {
+          "img": "boombox/08_squad.png",
+          "colorName": "Squad",
+          "gradientS": "#BEC3BC",
+          "gradientE": "#454932"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL Xtreme 2(CSR)",
+      "pid": "1efc",
+      "platform": "CSR",
+      "protocol": "PROTOCOL_BLE",
+      "otaUrl": "xtreme2/xtreme2_csr_ota.json",
+      "orientation": "horizontal",
+      "qsgUrl": "https://harman.widen.net/s/ggc98xwlkt/jbl_xtreme2_qsg_multilingual_hd",
+      "features": [
+        "MFB_SUPPORT",
+        "HFP_SUPPORT",
+        "FEEDBACK_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "xtreme2/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "xtreme2/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "02": {
+          "img": "xtreme2/02_red.png",
+          "colorName": "Red",
+          "gradientS": "#FFAFA7",
+          "gradientE": "#772921"
+        },
+        "03": {
+          "img": "xtreme2/03_blue.png",
+          "colorName": "Blue",
+          "gradientS": "#9EBECC",
+          "gradientE": "#32404B"
+        },
+        "04": {
+          "img": "xtreme2/04_teal.png",
+          "colorName": "Teal",
+          "gradientS": "#BEC3BC",
+          "gradientE": "#454932"
+        },
+        "08": {
+          "img": "xtreme2/08_squad.png",
+          "colorName": "Squad",
+          "gradientS": "#7D9B73",
+          "gradientE": "#553832"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL Xtreme 2(QCC)",
+      "pid": "1f26",
+      "platform": "QCC",
+      "protocol": "PROTOCOL_BLE",
+      "otaUrl": "xtreme2/xtreme2_qcc_ota.json",
+      "orientation": "horizontal",
+      "qsgUrl": "https://harman.widen.net/s/ggc98xwlkt/jbl_xtreme2_qsg_multilingual_hd",
+      "features": [
+        "MFB_SUPPORT",
+        "HFP_SUPPORT",
+        "FEEDBACK_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "xtreme2/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "xtreme2/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "02": {
+          "img": "xtreme2/02_red.png",
+          "colorName": "Red",
+          "gradientS": "#FFAFA7",
+          "gradientE": "#772921"
+        },
+        "03": {
+          "img": "xtreme2/03_blue.png",
+          "colorName": "Blue",
+          "gradientS": "#9EBECC",
+          "gradientE": "#32404B"
+        },
+        "04": {
+          "img": "xtreme2/04_teal.png",
+          "colorName": "Teal",
+          "gradientS": "#BEC3BC",
+          "gradientE": "#454932"
+        },
+        "08": {
+          "img": "xtreme2/08_squad.png",
+          "colorName": "Squad",
+          "gradientS": "#7D9B73",
+          "gradientE": "#553832"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL Xtreme 2(GM)",
+      "pid": "2038",
+      "platform": "QCC",
+      "protocol": "PROTOCOL_BLE",
+      "otaUrl": "xtreme2/xtreme2_gm_ota.json",
+      "orientation": "horizontal",
+      "qsgUrl": "https://harman.widen.net/s/6jdzmwlwpv/tr04515_jbl_xtreme2-gunmetal-edition_qsg_global_sop_v4_online",
+      "features": [
+        "FEEDBACK_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "xtreme2/12_gm_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "12": {
+          "img": "xtreme2/12_gm_black.png",
+          "colorName": "Gun Metal",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL Flip 4",
+      "pid": "1ed1",
+      "platform": "CSR",
+      "protocol": "PROTOCOL_BLE",
+      "otaUrl": "flip4/flip4_ota.json",
+      "orientation": "vertical",
+      "qsgUrl": "https://harman.widen.net/s/vtwwcszhfj/jbl_flip4_qsg_global",
+      "features": [
+        "MFB_SUPPORT",
+        "HFP_SUPPORT",
+        "FEEDBACK_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "flip4/01_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "flip4/01_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "02": {
+          "img": "flip4/02_red.png",
+          "colorName": "Red",
+          "gradientS": "#FFAFA7",
+          "gradientE": "#772921"
+        },
+        "03": {
+          "img": "flip4/03_blue.png",
+          "colorName": "Blue",
+          "gradientS": "#8FA9D8",
+          "gradientE": "#1A1F50"
+        },
+        "04": {
+          "img": "flip4/04_teal.png",
+          "colorName": "Teal",
+          "gradientS": "#AAE2D8",
+          "gradientE": "#326C6B"
+        },
+        "05": {
+          "img": "flip4/05_gray.png",
+          "colorName": "Grey",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "06": {
+          "img": "flip4/06_white.png",
+          "colorName": "White",
+          "gradientS": "#E0E0E0",
+          "gradientE": "#AAACAA"
+        },
+        "07": {
+          "img": "flip4/07_malta.png",
+          "colorName": "Malta",
+          "gradientS": "#FFAFA7",
+          "gradientE": "#1225BA"
+        },
+        "08": {
+          "img": "flip4/08_squad.png",
+          "colorName": "Squad",
+          "gradientS": "#BEC3BC",
+          "gradientE": "#454932"
+        },
+        "09": {
+          "img": "flip4/09_zap.png",
+          "colorName": "Zap",
+          "gradientS": "#DAC39C",
+          "gradientE": "#1225BA"
+        },
+        "0a": {
+          "img": "flip4/10_trio.png",
+          "colorName": "Trio",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#326C6B"
+        },
+        "0b": {
+          "img": "flip4/11_mosaic.png",
+          "colorName": "Mosaic",
+          "gradientS": "#AAE2D8",
+          "gradientE": "#32809D"
+        },
+        "10": {
+          "img": "flip4/10_trio.png",
+          "colorName": "Trio",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#326C6B"
+        },
+        "11": {
+          "img": "flip4/11_mosaic.png",
+          "colorName": "Mosaic",
+          "gradientS": "#AAE2D8",
+          "gradientE": "#32809D"
+        },
+        "12": {
+          "img": "flip4/12_oceanblue.png",
+          "colorName": "Oceanblue",
+          "gradientS": "#9EBECC",
+          "gradientE": "#32404B"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL Charge 3",
+      "pid": "1ebc",
+      "platform": "CSR",
+      "protocol": "PROTOCOL_BLE",
+      "otaUrl": "charge3/charge3_ota.json",
+      "orientation": "horizontal",
+      "qsgUrl": "https://harman.widen.net/s/ffvmsmjshb/sa_jbl_charge-3_qsg_global_online",
+      "features": [
+        "MFB_SUPPORT",
+        "HFP_SUPPORT",
+        "FEEDBACK_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "charge3/01_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "charge3/01_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "02": {
+          "img": "charge3/02_red.png",
+          "colorName": "Red",
+          "gradientS": "#FFAFA7",
+          "gradientE": "#772921"
+        },
+        "03": {
+          "img": "charge3/03_teal.png",
+          "colorName": "Teal",
+          "gradientS": "#AAE2D8",
+          "gradientE": "#326C6B"
+        },
+        "04": {
+          "img": "charge3/04_blue.png",
+          "colorName": "Blue",
+          "gradientS": "#8FA9DB",
+          "gradientE": "#1A1F50"
+        },
+        "05": {
+          "img": "charge3/05_grey.png",
+          "colorName": "Grey",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "06": {
+          "img": "charge3/06_mosaic.png",
+          "colorName": "Mosaic",
+          "gradientS": "#AAE2D8",
+          "gradientE": "#32809D"
+        },
+        "07": {
+          "img": "charge3/07_squad.png",
+          "colorName": "Squad",
+          "gradientS": "#BEC3BC",
+          "gradientE": "#454932"
+        },
+        "08": {
+          "img": "charge3/08_zap.png",
+          "colorName": "Zap",
+          "gradientS": "#DAC39C",
+          "gradientE": "#1225BA"
+        },
+        "09": {
+          "img": "charge3/09_malta.png",
+          "colorName": "Malta",
+          "gradientS": "#FFAFA7",
+          "gradientE": "#1225BA"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL Xtreme",
+      "pid": "0024",
+      "platform": "TWS",
+      "protocol": "PROTOCOL_SPP",
+      "orientation": "horizontal",
+      "qsgUrl": "https://harman.widen.net/s/gv7x5gmfcz/quick-start-guide-jbl-xtreme-multilingual",
+      "features": [
+        "MFB_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "xtreme/01_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "xtreme/01_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "02": {
+          "img": "xtreme/02_red.png",
+          "colorName": "Red",
+          "gradientS": "#FFAFA7",
+          "gradientE": "#772921"
+        },
+        "03": {
+          "img": "xtreme/03_blue.png",
+          "colorName": "Blue",
+          "gradientS": "#8FA9D8",
+          "gradientE": "#1A1F50"
+        },
+        "04": {
+          "img": "xtreme/04_squad.png",
+          "colorName": "Squad",
+          "gradientS": "#BEC3BC",
+          "gradientE": "#454932"
+        },
+        "05": {
+          "img": "xtreme/05_melta.png",
+          "colorName": "Malta",
+          "gradientS": "#FFAFA7",
+          "gradientE": "#1225BA"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL Flip 3",
+      "pid": "0023",
+      "platform": "TWS",
+      "protocol": "PROTOCOL_SPP",
+      "orientation": "vertical",
+      "qsgUrl": "https://harman.widen.net/s/wkmbgr85xw/jbl_flip3_qsg_global",
+      "features": [
+        "MFB_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "flip3/01_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "flip3/01_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "02": {
+          "img": "flip3/02_red.png",
+          "colorName": "Red",
+          "gradientS": "#FFAFA7",
+          "gradientE": "#772921"
+        },
+        "03": {
+          "img": "flip3/03_orange.png",
+          "colorName": "Orange",
+          "gradientS": "#F79D87",
+          "gradientE": "#B63125"
+        },
+        "04": {
+          "img": "flip3/04_pink.png",
+          "colorName": "Pink",
+          "gradientS": "#F4C1D5",
+          "gradientE": "#A91950"
+        },
+        "05": {
+          "img": "flip3/05_gray.png",
+          "colorName": "Gray",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "06": {
+          "img": "flip3/06_blue.png",
+          "colorName": "Blue",
+          "gradientS": "#8FA9D8",
+          "gradientE": "#1A1F50"
+        },
+        "07": {
+          "img": "flip3/07_yellow.png",
+          "colorName": "Yellow",
+          "gradientS": "#DAC39C",
+          "gradientE": "#956200"
+        },
+        "08": {
+          "img": "flip3/08_teal.png",
+          "colorName": "Teal",
+          "gradientS": "#AAE2D8",
+          "gradientE": "#326C6B"
+        },
+        "09": {
+          "img": "flip3/09_malta.png",
+          "colorName": "Malta",
+          "gradientS": "#FFAFA7",
+          "gradientE": "#1225BA"
+        },
+        "10": {
+          "img": "flip3/10_squad.png",
+          "colorName": "Squad",
+          "gradientS": "#BEC3BC",
+          "gradientE": "#454932"
+        },
+        "11": {
+          "img": "flip3/11_zap.png",
+          "colorName": "Zap",
+          "gradientS": "#DAC39C",
+          "gradientE": "#1225BA"
+        },
+        "12": {
+          "img": "flip3/12_tri.png",
+          "colorName": "Trio",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#326C6B"
+        },
+        "13": {
+          "img": "flip3/13_mosaic.png",
+          "colorName": "Mosaic",
+          "gradientS": "#AAE2D8",
+          "gradientE": "#32809D"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL Xtreme 4",
+      "pid": "20dc",
+      "platform": "Vimicro",
+      "protocol": "PROTOCOL_BLE",
+      "otaUrl": "xtreme4/xtreme4_ota.json",
+      "autoUpgradeUrl": "xtreme4/xtreme4_auto_upgrade_ota.json",
+      "orientation": "horizontal",
+      "qsgUrl": "https://harman.widen.net/s/flcvd9ljpm/pa_jbl_xtreme-4_qsg_global_sop_v11_online",
+      "eqConfig": "xtreme4_preset_eq.json",
+      "playTimeBoostConfig": "xtreme4_play_time_boost_eq.json",
+      "presetEqPath": "xtreme4_preset_eq.json",
+      "features": [
+        "FEEDBACK_SUPPORT",
+        "PRESET_EQ",
+        "AURACAST_SUPPORT",
+        "ONE_TOUCH_BACK_SUPPORT",
+        "BLE_DISCOVERY_CONNECT_ONLY",
+        "DEVICE_USAGE_SUMMARY_SUPPORT",
+        "PLAY_TIME_BOOST",
+        "FACTORY_RESET_SUPPORT",
+        "LONG_LASTING_STEREO",
+        "HORIZONTAL_DEVICE"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "xtreme4/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "xtreme4/01_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "03": {
+          "img": "xtreme4/03_blue.png",
+          "colorName": "Blue",
+          "gradientS": "#ADCBD8",
+          "gradientE": "#1A1F50"
+        },
+        "07": {
+          "img": "xtreme4/07_grey.png",
+          "colorName": "Grey",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "12": {
+          "img": "xtreme4/12_tml.png",
+          "colorName": "Tomorrowland",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "13": {
+          "img": "xtreme4/13_camo.png",
+          "colorName": "Squad",
+          "gradientS": "#C0C4B7",
+          "gradientE": "#3A412C"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL GO 4",
+      "pid": "20e4",
+      "platform": "Vimicro",
+      "protocol": "PROTOCOL_BLE",
+      "otaUrl": "go4/go4_ota.json",
+      "autoUpgradeUrl": "go4/go4_auto_upgrade_ota.json",
+      "orientation": "vertical",
+      "qsgUrl": "https://harman.widen.net/s/8f7kwhhrhv/pa_jbl_go-4_qsg_global_sop",
+      "eqConfig": "xtreme4_preset_eq.json",
+      "playTimeBoostConfig": "xtreme4_play_time_boost_eq.json",
+      "presetEqPath": "go4_preset.json",
+      "features": [
+        "FEEDBACK_SUPPORT",
+        "PRESET_EQ",
+        "NON_PARTY_BOOST_SUPPORT",
+        "AURACAST_SUPPORT",
+        "ONE_TOUCH_BACK_SUPPORT",
+        "DEVICE_USAGE_SUMMARY_SUPPORT",
+        "PLAY_TIME_BOOST",
+        "FACTORY_RESET_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "go4/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "go4/01_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "02": {
+          "img": "go4/02_red.png",
+          "colorName": "Red",
+          "gradientS": "#E1D1D6",
+          "gradientE": "#8D5260"
+        },
+        "03": {
+          "img": "go4/03_blue.png",
+          "colorName": "Blue",
+          "gradientS": "#ADCBD8",
+          "gradientE": "#1A1F50"
+        },
+        "04": {
+          "img": "go4/04_white.png",
+          "colorName": "White",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "10": {
+          "img": "go4/10_pink.png",
+          "colorName": "Pink",
+          "gradientS": "#E1D1D6",
+          "gradientE": "#8D5260"
+        },
+        "13": {
+          "img": "go4/13_camouflage.png",
+          "colorName": "Camouflage",
+          "gradientS": "#C0C4B7",
+          "gradientE": "#3A412C"
+        },
+        "14": {
+          "img": "go4/14_purple.png",
+          "colorName": "Purple",
+          "gradientS": "#C6B7D9",
+          "gradientE": "#5A3A8C"
+        },
+        "15": {
+          "img": "go4/15_funcky_black.png",
+          "colorName": "Funcky Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "16": {
+          "img": "go4/16_wembledongrn_green.png",
+          "colorName": "Wembledongrn Green",
+          "gradientS": "#D0C8C1",
+          "gradientE": "#28605E"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL GO 4",
+      "pid": "210a",
+      "platform": "Vimicro",
+      "protocol": "PROTOCOL_BLE",
+      "otaUrl": "go4_2/go4_2_ota.json",
+      "autoUpgradeUrl": "go4_2/go4_2_auto_upgrade_ota.json",
+      "orientation": "vertical",
+      "qsgUrl": "https://harman.widen.net/s/8f7kwhhrhv/pa_jbl_go-4_qsg_global_sop",
+      "eqConfig": "xtreme4_preset_eq.json",
+      "playTimeBoostConfig": "xtreme4_play_time_boost_eq.json",
+      "presetEqPath": "go4_preset.json",
+      "features": [
+        "FEEDBACK_SUPPORT",
+        "PRESET_EQ",
+        "NON_PARTY_BOOST_SUPPORT",
+        "AURACAST_SUPPORT",
+        "ONE_TOUCH_BACK_SUPPORT",
+        "DEVICE_USAGE_SUMMARY_SUPPORT",
+        "PLAY_TIME_BOOST",
+        "FACTORY_RESET_SUPPORT",
+        "LONG_LASTING_STEREO"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "go4/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "go4/01_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "02": {
+          "img": "go4/02_red.png",
+          "colorName": "Red",
+          "gradientS": "#E1D1D6",
+          "gradientE": "#8D5260"
+        },
+        "03": {
+          "img": "go4/03_blue.png",
+          "colorName": "Blue",
+          "gradientS": "#ADCBD8",
+          "gradientE": "#1A1F50"
+        },
+        "04": {
+          "img": "go4/04_white.png",
+          "colorName": "White",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "10": {
+          "img": "go4/10_pink.png",
+          "colorName": "Pink",
+          "gradientS": "#E1D1D6",
+          "gradientE": "#8D5260"
+        },
+        "13": {
+          "img": "go4/13_camouflage.png",
+          "colorName": "Camouflage",
+          "gradientS": "#C0C4B7",
+          "gradientE": "#3A412C"
+        },
+        "14": {
+          "img": "go4/14_purple.png",
+          "colorName": "Purple",
+          "gradientS": "#C6B7D9",
+          "gradientE": "#5A3A8C"
+        },
+        "15": {
+          "img": "go4/15_funcky_black.png",
+          "colorName": "Funcky Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "16": {
+          "img": "go4/16_wembledongrn_green.png",
+          "colorName": "Wembledongrn Green",
+          "gradientS": "#D0C8C1",
+          "gradientE": "#28605E"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBLGo4DUOL",
+      "pid": "215c",
+      "platform": "Vimicro",
+      "protocol": "PROTOCOL_BLE",
+      "otaUrl": "go4duoL/go4duoL_ota.json",
+      "autoUpgradeUrl": "go4duoL/go4duoL_auto_upgrade_ota.json",
+      "orientation": "vertical",
+      "qsgUrl": "https://harman.widen.net/s/hkbsmpvqhc/pa_jbl_go-4-duo_qsg_global_sop_v6_online",
+      "eqConfig": "xtreme4_preset_eq.json",
+      "playTimeBoostConfig": "xtreme4_play_time_boost_eq.json",
+      "presetEqPath": "go4_preset.json",
+      "features": [
+        "FEEDBACK_SUPPORT",
+        "PRESET_EQ",
+        "NON_PARTY_BOOST_SUPPORT",
+        "AURACAST_SUPPORT",
+        "BLE_DISCOVERY_CONNECT_ONLY",
+        "ONE_TOUCH_BACK_SUPPORT",
+        "AIR_TOUCH_STEREO",
+        "DEVICE_USAGE_SUMMARY_SUPPORT",
+        "PLAY_TIME_BOOST",
+        "FACTORY_RESET_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "go4duol/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "go4duol/01_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBLGo4DUOR",
+      "pid": "2181",
+      "platform": "Vimicro",
+      "protocol": "PROTOCOL_BLE",
+      "otaUrl": "go4duoR/go4duoR_ota.json",
+      "autoUpgradeUrl": "go4duoR/go4duoR_auto_upgrade_ota.json",
+      "orientation": "vertical",
+      "qsgUrl": "https://harman.widen.net/s/hkbsmpvqhc/pa_jbl_go-4-duo_qsg_global_sop_v6_online",
+      "eqConfig": "xtreme4_preset_eq.json",
+      "playTimeBoostConfig": "xtreme4_play_time_boost_eq.json",
+      "presetEqPath": "go4_preset.json",
+      "features": [
+        "FEEDBACK_SUPPORT",
+        "PRESET_EQ",
+        "NON_PARTY_BOOST_SUPPORT",
+        "AURACAST_SUPPORT",
+        "BLE_DISCOVERY_CONNECT_ONLY",
+        "ONE_TOUCH_BACK_SUPPORT",
+        "AIR_TOUCH_STEREO",
+        "DEVICE_USAGE_SUMMARY_SUPPORT",
+        "PLAY_TIME_BOOST",
+        "FACTORY_RESET_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "go4duor/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "go4duor/01_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL CLIP 5",
+      "pid": "20f5",
+      "platform": "Vimicro",
+      "protocol": "PROTOCOL_BLE",
+      "otaUrl": "clip5/clip5_ota.json",
+      "autoUpgradeUrl": "clip5/clip5_auto_upgrade_ota.json",
+      "orientation": "vertical",
+      "qsgUrl": "https://harman.widen.net/s/cxqdd5fzqj/pa_jbl_clip-5_qsg_global_sop_v7_online",
+      "eqConfig": "xtreme4_preset_eq.json",
+      "playTimeBoostConfig": "xtreme4_play_time_boost_eq.json",
+      "presetEqPath": "clip5_preset_eq.json",
+      "features": [
+        "FEEDBACK_SUPPORT",
+        "PRESET_EQ",
+        "NON_PARTY_BOOST_SUPPORT",
+        "AURACAST_SUPPORT",
+        "ONE_TOUCH_BACK_SUPPORT",
+        "DEVICE_USAGE_SUMMARY_SUPPORT",
+        "PLAY_TIME_BOOST",
+        "FACTORY_RESET_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "clip5/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "clip5/01_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "02": {
+          "img": "clip5/02_red.png",
+          "colorName": "Red",
+          "gradientS": "#E1D1D6",
+          "gradientE": "#8D5260"
+        },
+        "03": {
+          "img": "clip5/03_blue.png",
+          "colorName": "Blue",
+          "gradientS": "#ADCBD8",
+          "gradientE": "#1A1F50"
+        },
+        "04": {
+          "img": "clip5/04_white.png",
+          "colorName": "White",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "10": {
+          "img": "clip5/10_pink.png",
+          "colorName": "Pink",
+          "gradientS": "#E1D1D6",
+          "gradientE": "#8D5260"
+        },
+        "13": {
+          "img": "clip5/13_camouflage.png",
+          "colorName": "Camouflage",
+          "gradientS": "#C0C4B7",
+          "gradientE": "#3A412C"
+        },
+        "14": {
+          "img": "clip5/14_purple.png",
+          "colorName": "Purple",
+          "gradientS": "#C6B7D9",
+          "gradientE": "#5A3A8C"
+        },
+        "15": {
+          "img": "clip5/15_funcky_black.png",
+          "colorName": "Funcky Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "16": {
+          "img": "clip5/16_wembledongrn_green.png",
+          "colorName": "Wembledongrn Green",
+          "gradientS": "#D0C8C1",
+          "gradientE": "#28605E"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL Charge 6",
+      "pid": "20e3",
+      "platform": "Vimicro",
+      "protocol": "PROTOCOL_BLE",
+      "dynamicOTAUrl": "true",
+      "orientation": "vertical",
+      "qsgUrl": "https://harman.widen.net/s/6vzfwvrvnl/pa_jbl_charge-6_qsg_global_sop_v10_online",
+      "eqConfig": "charge6_preset_eq.json",
+      "playTimeBoostConfig": "xtreme4_play_time_boost_eq.json",
+      "presetEqPath": "charge6_preset_eq.json",
+      "features": [
+        "FEEDBACK_SUPPORT",
+        "PRESET_EQ",
+        "NON_PARTY_BOOST_SUPPORT",
+        "AURACAST_SUPPORT",
+        "ONE_TOUCH_BACK_SUPPORT",
+        "BLE_DISCOVERY_CONNECT_ONLY",
+        "DEVICE_USAGE_SUMMARY_SUPPORT",
+        "PLAY_TIME_BOOST",
+        "FACTORY_RESET_SUPPORT",
+        "HORIZONTAL_DEVICE",
+        "7_BANDS_EQ",
+        "SQ_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "charge6/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "charge6/01_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "02": {
+          "img": "charge6/02_red.png",
+          "colorName": "Red",
+          "gradientS": "#E1D1D6",
+          "gradientE": "#8D5260"
+        },
+        "03": {
+          "img": "charge6/03_blue.png",
+          "colorName": "Blue",
+          "gradientS": "#ADCBD8",
+          "gradientE": "#1A1F50"
+        },
+        "04": {
+          "img": "charge6/04_white.png",
+          "colorName": "White",
+          "gradientS": "#E0E0E0",
+          "gradientE": "#AAACAA"
+        },
+        "08": {
+          "img": "charge6/08_sand.png",
+          "colorName": "Sand",
+          "gradientS": "#C5BBAD",
+          "gradientE": "#735B39"
+        },
+        "10": {
+          "img": "charge6/10_pink.png",
+          "colorName": "Pink",
+          "gradientS": "#E1D1D6",
+          "gradientE": "#8D5260"
+        },
+        "14": {
+          "img": "charge6/14_purple.png",
+          "colorName": "Purple",
+          "gradientS": "#C6B7D9",
+          "gradientE": "#5A3A8C"
+        },
+        "16": {
+          "img": "charge6/16_squad.png",
+          "colorName": "Squad",
+          "gradientS": "#C0C4B7",
+          "gradientE": "#3A412C"
+        },
+        "17": {
+          "img": "charge6/17_black_orange.png",
+          "colorName": "Black and Orange",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "18": {
+          "img": "charge6/18_turquoise.png",
+          "colorName": "Turquoise",
+          "gradientS": "#AEE6DB",
+          "gradientE": "#28605E"
+        }
+
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL Flip 7",
+      "pid": "2107",
+      "platform": "Vimicro",
+      "protocol": "PROTOCOL_BLE",
+      "orientation": "vertical",
+      "dynamicOTAUrl": "true",
+      "qsgUrl": "https://harman.widen.net/s/rmphhwwxlw/pa_jbl_flip-7_qsg_global_sop_v9_online",
+      "eqConfig": "flip7_preset_eq.json",
+      "playTimeBoostConfig": "xtreme4_play_time_boost_eq.json",
+      "presetEqPath": "flip7_preset_eq.json",
+      "features": [
+        "FEEDBACK_SUPPORT",
+        "PRESET_EQ",
+        "NON_PARTY_BOOST_SUPPORT",
+        "AURACAST_SUPPORT",
+        "ONE_TOUCH_BACK_SUPPORT",
+        "BLE_DISCOVERY_CONNECT_ONLY",
+        "DEVICE_USAGE_SUMMARY_SUPPORT",
+        "PLAY_TIME_BOOST",
+        "FACTORY_RESET_SUPPORT",
+        "HORIZONTAL_DEVICE",
+        "7_BANDS_EQ",
+        "SQ_SUPPORT"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "flip7/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "flip7/01_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "02": {
+          "img": "flip7/02_red.png",
+          "colorName": "Red",
+          "gradientS": "#E1D1D6",
+          "gradientE": "#8D5260"
+        },
+        "03": {
+          "img": "flip7/03_blue.png",
+          "colorName": "Blue",
+          "gradientS": "#ADCBD8",
+          "gradientE": "#1A1F50"
+        },
+        "04": {
+          "img": "flip7/04_white.png",
+          "colorName": "White",
+          "gradientS": "#E0E0E0",
+          "gradientE": "#AAACAA"
+        },
+        "08": {
+          "img": "flip7/08_sand.png",
+          "colorName": "Sand",
+          "gradientS": "#C5BBAD",
+          "gradientE": "#735B39"
+        },
+        "10": {
+          "img": "flip7/10_pink.png",
+          "colorName": "Pink",
+          "gradientS": "#E1D1D6",
+          "gradientE": "#8D5260"
+        },
+        "13": {
+          "img": "flip7/13_camo.png",
+          "colorName": "Black Camouflage",
+          "gradientS": "#C0C4B7",
+          "gradientE": "#3A412C"
+        },
+        "14": {
+          "img": "flip7/14_purple.png",
+          "colorName": "Purple",
+          "gradientS": "#C6B7D9",
+          "gradientE": "#5A3A8C"
+        },
+        "15": {
+          "img": "flip7/15_funcky_black.png",
+          "colorName": "Funcky Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "12": {
+          "img": "flip7/12_tomorrowland.png",
+          "colorName": "TomorrowLand",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "18": {
+          "img": "flip7/18_turquoise.png",
+          "colorName": "Turquoise",
+          "gradientS": "#AEE6DB",
+          "gradientE": "#28605E"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL Tuner 3",
+      "pid": "214c",
+      "platform": "Vimicro",
+      "protocol": "PROTOCOL_BLE",
+      "orientation": "vertical",
+      "dynamicOTAUrl": "true",
+      "qsgUrl": "https://harman.widen.net/s/tfrhvgvqg9/pa_jbl_tuner-3_qsg_global_sop_v8_online",
+      "eqConfig": "tuner3_preset_eq.json",
+      "playTimeBoostConfig": "xtreme4_play_time_boost_eq.json",
+      "presetEqPath": "tuner3_preset_eq.json",
+      "features": [
+        "FEEDBACK_SUPPORT",
+        "PRESET_EQ",
+        "NON_PARTY_BOOST_SUPPORT",
+        "AURACAST_SUPPORT",
+        "ONE_TOUCH_BACK_SUPPORT",
+        "HORIZONTAL_DEVICE",
+        "DEVICE_USAGE_SUMMARY_SUPPORT",
+        "PLAY_TIME_BOOST",
+        "FACTORY_RESET_SUPPORT",
+        "BLE_DISCOVERY_CONNECT_ONLY",
+        "SQ_SUPPORT",
+        "RADIO_SUPPORT",
+        "SCREEN_DISPLAY_BRIGHTNESS"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "tuner3/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "tuner3/01_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "04": {
+          "img": "tuner3/04_white.png",
+          "colorName": "White",
+          "gradientS": "#E0E0E0",
+          "gradientE": "#AAACAA"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL Charge Essential 3 SE",
+      "pid": "218a",
+      "platform": "Vimicro",
+      "protocol": "PROTOCOL_BLE",
+      "dynamicOTAUrl": "true",
+      "orientation": "vertical",
+      "qsgUrl": "https://harman.widen.net/s/ggvjlrhxbk/pa_jbl_charge-essential-3-se_qsg_global_sop_v4_online",
+      "eqConfig": "charge6_preset_eq.json",
+      "playTimeBoostConfig": "xtreme4_play_time_boost_eq.json",
+      "presetEqPath": "charge6_preset_eq.json",
+      "features": [
+        "FEEDBACK_SUPPORT",
+        "PRESET_EQ",
+        "NON_PARTY_BOOST_SUPPORT",
+        "AURACAST_SUPPORT",
+        "ONE_TOUCH_BACK_SUPPORT",
+        "BLE_DISCOVERY_CONNECT_ONLY",
+        "DEVICE_USAGE_SUMMARY_SUPPORT",
+        "FACTORY_RESET_SUPPORT",
+        "HORIZONTAL_DEVICE",
+        "BLE_DISCOVERY_CONNECT_ONLY",
+        "7_BANDS_EQ",
+        "SQ_SUPPORT",
+        "PROTOCOL_4"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "charge3ess/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "charge3ess/01_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "26": {
+          "img": "charge3ess/01_black.png",
+          "colorName": "Gun Metal",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "27": {
+          "img": "charge3ess/01_black.png",
+          "colorName": "Gun Metal Alt",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        }
+      },
+      "imageVersion": "0.1"
+    },
+    {
+      "deviceName": "JBL Flip Essential 3 SE",
+      "pid": "2185",
+      "platform": "Vimicro",
+      "protocol": "PROTOCOL_BLE",
+      "orientation": "vertical",
+      "dynamicOTAUrl": "true",
+      "qsgUrl": "https://harman.widen.net/s/fmlzbqj9mv/pa_jbl_flip-essential-3-se_qsg_global_sop_v5_online",
+      "eqConfig": "flip7_preset_eq.json",
+      "playTimeBoostConfig": "xtreme4_play_time_boost_eq.json",
+      "presetEqPath": "flip7_preset_eq.json",
+      "features": [
+        "FEEDBACK_SUPPORT",
+        "PRESET_EQ",
+        "NON_PARTY_BOOST_SUPPORT",
+        "AURACAST_SUPPORT",
+        "ONE_TOUCH_BACK_SUPPORT",
+        "BLE_DISCOVERY_CONNECT_ONLY",
+        "DEVICE_USAGE_SUMMARY_SUPPORT",
+        "FACTORY_RESET_SUPPORT",
+        "HORIZONTAL_DEVICE",
+        "BLE_DISCOVERY_CONNECT_ONLY",
+        "7_BANDS_EQ",
+        "SQ_SUPPORT",
+        "PROTOCOL_4"
+      ],
+      "productImageUrls": {
+        "00": {
+          "img": "flip3ess/00_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "01": {
+          "img": "flip3ess/01_black.png",
+          "colorName": "Black",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "26": {
+          "img": "flip3ess/01_black.png",
+          "colorName": "Gun Metal",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        },
+        "27": {
+          "img": "flip3ess/01_black.png",
+          "colorName": "Gun Metal Alt",
+          "gradientS": "#B1B1B1",
+          "gradientE": "#434343"
+        }
+      },
+      "imageVersion": "0.1"
+    }
+  ]
+}
