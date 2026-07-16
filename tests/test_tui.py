@@ -4,7 +4,7 @@ import pytest
 from textual.widgets import DataTable, Input, Select, Static
 
 import vantadsp.tui as tui_module
-from vantadsp import protocol
+from vantadsp import __build_id__, __version__, protocol
 from vantadsp.config import Settings
 from vantadsp.tui import VantaDSPApp
 
@@ -14,6 +14,8 @@ async def test_tui_mounts_with_direct_apply():
     app = VantaDSPApp(Settings(last_address="", last_pid="20e3", auto_update=False))
     async with app.run_test(size=(80, 24)) as pilot:
         await pilot.pause()
+        assert f"v{__version__}" in app.SUB_TITLE
+        assert f"BUILD {__build_id__}" in app.SUB_TITLE
         assert len(app.query_one("#devices", DataTable).columns) == 5
         assert app.query_one("#devices", DataTable).region.height > 3
         assert not app.query("#guard")

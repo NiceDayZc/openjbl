@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vantadsp"
-version = "0.2.2"
+version = "0.2.3"
 description = "VantaDSP: safe JBL Portable Bluetooth protocol, EQ, CLI, and TUI toolkit"
 readme = "README.md"
 license = "MIT"

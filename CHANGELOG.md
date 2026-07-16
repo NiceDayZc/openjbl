@@ -2,6 +2,13 @@
 
 All notable changes follow Keep a Changelog style. This project uses semantic versioning while its public API stabilizes.
 
+## [0.2.3] - 2026-07-16
+
+### Changed
+
+- Added the installed version and release build ID to the always-visible TUI header.
+- Added version/build identity to the Activity startup log for support screenshots and diagnostics.
+
 ## [0.2.2] - 2026-07-16
 
 ### Changed

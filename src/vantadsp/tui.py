@@ -26,6 +26,7 @@ from textual.widgets import (
     TabPane,
 )
 
+from . import __build_id__, __version__
 from .audit import append_audit, target_fingerprint
 from .config import Settings
 from .models import all_models, auto_eq_frames, auto_read_frames, gain_count_for_pid, summarize_model
@@ -41,7 +42,7 @@ MODEL_OPTIONS = [(f"{model.get('deviceName')} / {model.get('pid')}", str(model.g
 
 class VantaDSPApp(App[None]):
     TITLE = "VANTADSP"
-    SUB_TITLE = "BLUETOOTH EQ CONTROL"
+    SUB_TITLE = f"BLUETOOTH EQ CONTROL  /  v{__version__}  /  BUILD {__build_id__}"
     CSS = """
     Screen { background: #000000; color: #eeeeee; }
     Header, Footer { background: #eeeeee; color: #000000; }
@@ -154,6 +155,7 @@ class VantaDSPApp(App[None]):
         table = self.query_one("#devices", DataTable)
         table.add_columns("NAME", "DETECTED MODEL", "PID", "RSSI", "ADDRESS")
         self._load_profile("balanced")
+        self.log_message(f"START  |  VantaDSP v{__version__}  |  build={__build_id__}")
         self.log_message("READY  |  Direct apply is enabled. Start with SCAN or select a known address.")
         if self.settings.auto_update:
             self.update_worker()

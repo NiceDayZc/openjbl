@@ -8,7 +8,7 @@ VantaDSP is a safety-first Python toolkit and monochrome terminal interface for 
 
 ## Highlights
 
-- Clean monochrome TUI with device discovery, model-aware EQ, live status, packet preview, and activity logs
+- Clean monochrome TUI with device discovery, model-aware EQ, live status, visible version/build identity, packet preview, and activity logs
 - BLE scan, advertisement/manufacturer-data inspection, and full GATT service discovery
 - Automatic JBL model/PID detection from Harman advertisement bytes, service UUIDs, names, and Windows paired metadata
 - Harman/JBL BLE GATT and Bluetooth Classic SPP transports
