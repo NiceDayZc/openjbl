@@ -2,8 +2,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from vantadsp import probe, protocol
-from vantadsp.transport import BleTransport
+from vantadsp import probe, protocol, transport
+from vantadsp.transport import BleTransport, scan_ble
 
 
 class FakeClient:
@@ -29,6 +29,49 @@ async def test_ble_transport_write_chooses_response():
     transport.client = FakeClient()
     await transport.write(b"abc")
     assert transport.client.writes == [("tx", b"abc", True)]
+
+
+@pytest.mark.asyncio
+async def test_scan_enriches_and_prioritizes_detected_jbl(monkeypatch):
+    import bleak
+
+    class FakeScanner:
+        @staticmethod
+        async def discover(*, timeout, return_adv):
+            assert timeout == 0.01 and return_adv is True
+            return {
+                "mouse": (
+                    SimpleNamespace(name="Wireless Mouse"),
+                    SimpleNamespace(
+                        local_name=None,
+                        rssi=-20,
+                        service_uuids=[],
+                        service_data={},
+                        manufacturer_data={},
+                    ),
+                ),
+                "speaker": (
+                    SimpleNamespace(name="JBL Charge6"),
+                    SimpleNamespace(
+                        local_name=None,
+                        rssi=-50,
+                        service_uuids=[],
+                        service_data={},
+                        manufacturer_data={87: bytes.fromhex("e3200100")},
+                    ),
+                ),
+            }
+
+    monkeypatch.setattr(bleak, "BleakScanner", FakeScanner)
+
+    async def no_paired_devices():
+        return []
+
+    monkeypatch.setattr(transport, "windows_paired_jbl", no_paired_devices)
+    rows = await scan_ble(0.01)
+    assert [row["address"] for row in rows] == ["speaker", "mouse"]
+    assert rows[0]["jbl_detection"]["pid"] == "20e3"
+    assert rows[0]["service_data"] == {}
 
 
 class FakeProbeTransport:

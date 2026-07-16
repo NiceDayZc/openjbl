@@ -7,6 +7,8 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
+from .discovery import detect_jbl_device, windows_paired_jbl
+
 SERVICE_UUID = "65786365-6c70-6f69-6e74-2e636f6d0000"
 RX_UUID = "65786365-6c70-6f69-6e74-2e636f6d0001"
 TX_UUID = "65786365-6c70-6f69-6e74-2e636f6d0002"
@@ -21,16 +23,30 @@ async def scan_ble(timeout: float = 8.0) -> list[dict[str, Any]]:
     rows = []
     for address, pair in found.items():
         device, advertisement = pair
-        rows.append(
-            {
-                "name": device.name or advertisement.local_name or "",
-                "address": address,
-                "rssi": advertisement.rssi,
-                "service_uuids": list(advertisement.service_uuids or []),
-                "manufacturer_data": {str(k): bytes(v).hex() for k, v in advertisement.manufacturer_data.items()},
-            }
-        )
-    return sorted(rows, key=lambda item: item["rssi"], reverse=True)
+        row = {
+            "name": device.name or advertisement.local_name or "",
+            "address": address,
+            "rssi": advertisement.rssi,
+            "service_uuids": list(advertisement.service_uuids or []),
+            "service_data": {str(k): bytes(v).hex() for k, v in advertisement.service_data.items()},
+            "manufacturer_data": {str(k): bytes(v).hex() for k, v in advertisement.manufacturer_data.items()},
+        }
+        row["jbl_detection"] = detect_jbl_device(row)
+        rows.append(row)
+    known_addresses = {str(row["address"]).replace(":", "").casefold() for row in rows}
+    for paired in await windows_paired_jbl():
+        normalized = str(paired["address"]).replace(":", "").casefold()
+        if normalized not in known_addresses:
+            rows.append(paired)
+            known_addresses.add(normalized)
+    return sorted(
+        rows,
+        key=lambda item: (
+            not bool(item["jbl_detection"]["pid"]),
+            not bool(item["jbl_detection"]["is_jbl"]),
+            -int(item["rssi"] if item["rssi"] is not None else -999),
+        ),
+    )
 
 
 class BleTransport:

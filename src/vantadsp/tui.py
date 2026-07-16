@@ -99,7 +99,8 @@ class VantaDSPApp(App[None]):
         with TabbedContent(initial="device-tab", id="main-tabs"):
             with TabPane("01  DEVICE", id="device-tab"):
                 yield Static(
-                    "STEP 1  Scan for speakers.  STEP 2  Select a row and model.  STEP 3  Probe safely.",
+                    "AUTO DETECT  Scan for JBL speakers; the strongest identified model is selected automatically.",
+                    id="detect-guide",
                     classes="guide",
                 )
                 with Horizontal(id="setup"):
@@ -152,7 +153,7 @@ class VantaDSPApp(App[None]):
 
     def on_mount(self) -> None:
         table = self.query_one("#devices", DataTable)
-        table.add_columns("NAME", "ADDRESS", "RSSI", "MANUFACTURER DATA")
+        table.add_columns("NAME", "DETECTED MODEL", "PID", "RSSI", "ADDRESS")
         self._load_profile("balanced")
         self.log_message("READY  |  Hardware writes are locked. Start with SCAN or select a known address.")
 
@@ -232,11 +233,39 @@ class VantaDSPApp(App[None]):
         address = str(event.row_key.value)
         row = self._scan_rows.get(address)
         if row:
-            self.query_one("#address", Input).value = address
-            name = row["name"] or "UNNAMED"
-            self._status(device=f"SELECTED  {name}  {row['rssi']} dBm")
-            self.log_message(f"SELECT  |  {name}  |  {address}")
-            self.notify(f"Selected {name}. Confirm the model, then probe.", title="Device selected")
+            self._select_scan_row(row, automatic=False)
+
+    def _select_scan_row(self, row: dict[str, Any], *, automatic: bool) -> None:
+        address = str(row["address"])
+        name = str(row["name"] or "UNNAMED")
+        detection = row.get("jbl_detection", {})
+        pid = detection.get("pid")
+        signal = "PAIRED" if row.get("rssi") is None else f"{row['rssi']} dBm"
+        self.query_one("#address", Input).value = address
+        if pid:
+            self.query_one("#pid", Select).value = str(pid)
+            model = str(detection["model"])
+            confidence = str(detection["confidence"]).upper()
+            reason = str(detection["reason"])
+            mode = "AUTO" if automatic else "SELECTED"
+            self._status(device=f"{mode}  {model}  {signal}")
+            self.query_one("#detect-guide", Static).update(
+                f"AUTO-DETECTED  {model} / PID {pid} / {confidence} confidence / {reason}"
+            )
+            self.log_message(f"DETECT  |  {model}  |  PID {pid}  |  {confidence}  |  {reason}  |  {address}")
+            self.notify(
+                f"{model} / PID {pid} ({confidence} confidence). Confirm, then probe.",
+                title="JBL auto-detected",
+            )
+            return
+        self._status(device=f"SELECTED  {name}  {signal}")
+        self.query_one("#detect-guide", Static).update(
+            "JBL signature found, but PID is unresolved. Select the model manually before probing."
+            if detection.get("is_jbl")
+            else "No JBL signature in this advertisement. Select another result or choose the model manually."
+        )
+        self.log_message(f"SELECT  |  {name}  |  PID unresolved  |  {address}")
+        self.notify(f"Selected {name}; model was not auto-detected.", title="Manual model selection required")
 
     def on_select_changed(self, event: Select.Changed) -> None:
         if event.value is Select.BLANK:
@@ -297,18 +326,25 @@ class VantaDSPApp(App[None]):
             table.clear()
             self._scan_rows = {str(row["address"]): row for row in rows}
             for row in rows:
+                detection = row["jbl_detection"]
                 table.add_row(
                     row["name"] or "<unnamed>",
+                    detection["model"] or ("JBL / unresolved" if detection["is_jbl"] else "-"),
+                    detection["pid"] or "-",
+                    "PAIRED" if row["rssi"] is None else f"{row['rssi']} dBm",
                     row["address"],
-                    f"{row['rssi']} dBm",
-                    json.dumps(row["manufacturer_data"], separators=(",", ":")),
                     key=row["address"],
                 )
-            strongest = f"  |  strongest {rows[0]['rssi']} dBm" if rows else ""
+            detected = next((row for row in rows if row["jbl_detection"]["pid"]), None)
+            if detected is not None:
+                self._select_scan_row(detected, automatic=True)
+            signal_rows = [row for row in rows if row["rssi"] is not None]
+            strongest = f"  |  strongest {max(row['rssi'] for row in signal_rows)} dBm" if signal_rows else ""
             self._status(system=f"READY - {len(rows)} DEVICES")
             self.log_message(f"SCAN    |  Complete  |  {len(rows)} devices{strongest}")
             self.notify(
-                f"Found {len(rows)} device(s). Select a row, confirm the model, then probe.",
+                f"Found {len(rows)} device(s). "
+                + ("A JBL model was selected automatically." if detected else "Select a device and model manually."),
                 title="Scan complete",
             )
         except Exception as exc:

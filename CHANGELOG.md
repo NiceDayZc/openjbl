@@ -10,6 +10,7 @@ All notable changes follow Keep a Changelog style. This project uses semantic ve
 - Replaced Unicode-heavy borders, separators, and curve blocks with legacy-console-safe ASCII.
 - Added visible success, warning, and error notifications plus direct `1`/`2`/`3` workspace shortcuts.
 - Reduced nested framing and verified the interface at an 80x24 terminal size.
+- Added automatic JBL/PID selection from Harman company data, `DFFD`/`FDDF`/`FC69` service data, derived service UUIDs, unique names, and Windows paired-device metadata.
 
 ## [0.2.1] - 2026-07-16
 
