@@ -25,7 +25,7 @@ The first environment-wide dependency scan found vulnerabilities in unrelated pa
 | Risk | Control | Residual risk |
 |---|---|---|
 | Wrong protocol sent to a model | PID capability database, `auto_read_frames`, `auto_eq_frames`, range/count validation | APK data or a future firmware can still differ; run `probe` first |
-| Accidental mutation | CLI dry-run; TUI switch plus exact `APPLY`; preview shows encoded bytes | User can explicitly bypass guards or use raw mode |
+| Accidental mutation | CLI dry-run; TUI clearly labels direct apply; preview shows encoded bytes | A TUI apply click writes immediately; raw mode remains expert-only |
 | Device identifier leakage | APK/captures/config/audit ignored by Git; audit stores 16-char SHA-256-derived fingerprint | Terminal screenshots and manually copied output can still reveal addresses |
 | Corrupt or partial BLE response | frame length validation and decode errors | Protocol 4 multi-notification reassembly is limited to the notifications returned by one transaction window |
 | Concurrent app connection | documented instruction to close the mobile app | OS/firmware arbitration differs by platform |
@@ -40,7 +40,7 @@ The first environment-wide dependency scan found vulnerabilities in unrelated pa
 - Profile matrix tests resolve and encode all 24 profiles across all 21 EQ-capable PIDs (504 model/profile combinations).
 - Negative tests cover invalid gain counts, non-integer legacy levels, invalid UI steps, unknown PID/preset, malformed configuration, and TUI write lock.
 - Fake transports exercise write response selection and probe classification without requiring Bluetooth hardware.
-- Textual `run_test` verifies the TUI mounts headlessly and remains write-locked.
+- Textual `run_test` verifies the TUI mounts headlessly with direct-apply controls.
 - Hardware verification is intentionally opt-in and currently covers JBL Charge 6 PID `20E3`, firmware `3.0.7.1`.
 
 ## Known limitations

@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from textual.widgets import DataTable, Input, Select, Static, Switch
+from textual.widgets import DataTable, Input, Select, Static
 
 import vantadsp.tui as tui_module
 from vantadsp.config import Settings
@@ -9,14 +9,15 @@ from vantadsp.tui import VantaDSPApp
 
 
 @pytest.mark.asyncio
-async def test_tui_mounts_and_write_is_locked():
+async def test_tui_mounts_with_direct_apply():
     app = VantaDSPApp(Settings(last_address="", last_pid="20e3"))
     async with app.run_test(size=(80, 24)) as pilot:
         await pilot.pause()
         assert len(app.query_one("#devices", DataTable).columns) == 5
         assert app.query_one("#devices", DataTable).region.height > 3
-        assert app.query_one("#guard", Switch).value is False
-        assert "WRITE LOCKED" in str(app.query_one("#status-safety", Static).render())
+        assert not app.query("#guard")
+        assert not app.query("#confirm")
+        assert not app.query("#status-safety")
         app.query_one("#profile", Select).value = "bass"
         await pilot.pause()
         assert app.query_one("#gains", Input).value == "6, 4, 1, -1, -1, 0, 1"
@@ -42,13 +43,6 @@ async def test_tui_mounts_and_write_is_locked():
         app.action_eq_tab()
         await pilot.pause()
         assert app.query_one("#main-tabs").active == "eq-tab"
-        app.apply_eq()
-        assert app.query_one("#confirm", Input).value == ""
-        assert "WRITE BLOCKED" in str(app.query_one("#safety-guide", Static).render())
-        app.query_one("#guard", Switch).value = True
-        app.query_one("#confirm", Input).value = "APPLY"
-        await pilot.pause()
-        assert "READY TO APPLY" in str(app.query_one("#status-safety", Static).render())
 
 
 def test_tui_source_is_legacy_console_safe():
