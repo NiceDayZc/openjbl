@@ -7,8 +7,8 @@ Audited release candidate: `0.2.2`
 
 | Gate | Result |
 |---|---|
-| Unit/integration/headless TUI tests | 53 passed |
-| Full-package branch-aware coverage | 72% (minimum gate 65%) |
+| Unit/integration/headless TUI tests | 59 passed |
+| Full-package branch-aware coverage | 71% (minimum gate 65%) |
 | Ruff lint and formatting | pass |
 | mypy package type check | pass |
 | Bandit static security scan | pass; no findings after reviewed B105 filter-name false positive is configured globally |

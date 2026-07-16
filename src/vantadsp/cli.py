@@ -13,6 +13,7 @@ from .presets import PROFILES, resolve_profile
 from .probe import probe_ble
 from .protocol import EQ_CATEGORIES, FILTER_TYPES, ParametricBand, describe_frame, hex_bytes, parse_hex
 from .transport import RX_UUID, SERVICE_UUID, TX_UUID, BleTransport, SerialTransport, scan_ble
+from .updater import check_for_update_safe, update_now
 
 
 def dump(value: object) -> None:
@@ -138,6 +139,9 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("profiles", help="list curated sound profiles, optionally resolved for a PID")
     p.add_argument("--pid")
 
+    sub.add_parser("check-update", help="check the latest VantaDSP version on PyPI")
+    sub.add_parser("update", help="install the latest VantaDSP version from PyPI")
+
     p = sub.add_parser("probe", help="read-only probe of every EQ protocol generation")
     add_connection(p)
     p.add_argument("--pid", help="known product ID for model-aware reporting")
@@ -260,6 +264,12 @@ def _main(argv: list[str] | None = None) -> None:
             for profile in PROFILES
         ]
         dump(rows)
+        return
+    if args.command == "check-update":
+        dump(check_for_update_safe().as_dict())
+        return
+    if args.command == "update":
+        dump(update_now().as_dict())
         return
     if args.command == "probe":
         if not args.address:

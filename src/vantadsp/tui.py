@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import time
 import uuid
@@ -32,6 +33,7 @@ from .presets import get_profile, profile_options, resolve_profile, sparkline
 from .probe import probe_ble
 from .protocol import describe_frame, hex_bytes
 from .transport import BleTransport, scan_ble
+from .updater import auto_update
 from .verification import verify_eq_readback
 
 MODEL_OPTIONS = [(f"{model.get('deviceName')} / {model.get('pid')}", str(model.get("pid"))) for model in all_models()]
@@ -153,6 +155,22 @@ class VantaDSPApp(App[None]):
         table.add_columns("NAME", "DETECTED MODEL", "PID", "RSSI", "ADDRESS")
         self._load_profile("balanced")
         self.log_message("READY  |  Direct apply is enabled. Start with SCAN or select a known address.")
+        if self.settings.auto_update:
+            self.update_worker()
+
+    @work(exclusive=False)
+    async def update_worker(self) -> None:
+        self.log_message("UPDATE  |  Checking PyPI in the background...")
+        result = await asyncio.to_thread(auto_update)
+        self.log_message(
+            f"UPDATE  |  status={result.status}  |  current={result.current}  |  latest={result.latest}  |  "
+            f"{result.message}"
+        )
+        if result.installed:
+            self._status(system="UPDATE INSTALLED")
+            self.notify(result.message, title="Update installed", severity="information", timeout=10)
+        elif result.status in {"install-failed", "check-failed"}:
+            self.notify(result.message, title="Automatic update unavailable", severity="warning")
 
     def log_message(self, message: str) -> None:
         self.query_one("#log", RichLog).write(message)

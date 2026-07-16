@@ -28,6 +28,13 @@ Install the latest release from PyPI:
 python -m pip install vantadsp
 ```
 
+PyPI installations check for updates in the background when `vantatui` starts. A newer release is installed with the same Python interpreter, and Activity reports that a restart is required. Editable development installs are never overwritten automatically. Manual commands are also available:
+
+```powershell
+vantactl check-update
+vantactl update
+```
+
 To install from a cloned repository instead:
 
 ```powershell
@@ -62,6 +69,7 @@ vantactl services --address DEVICE_FROM_SCAN
 vantactl probe --address DEVICE_FROM_SCAN
 vantactl models
 vantactl models 20e3
+vantactl check-update
 ```
 
 Known default BLE values extracted from the APK:

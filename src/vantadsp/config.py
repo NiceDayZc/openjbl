@@ -25,6 +25,7 @@ class Settings:
     tx_uuid: str = TX_UUID
     timeout: float = 3.0
     scan_seconds: float = 8.0
+    auto_update: bool = True
 
     @classmethod
     def load(cls, path: Path | None = None) -> Settings:
