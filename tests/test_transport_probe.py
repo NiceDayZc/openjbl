@@ -10,6 +10,7 @@ class FakeClient:
     def __init__(self):
         self.writes = []
         self.callback = None
+        self.is_connected = True
         characteristic = SimpleNamespace(properties=["write"], uuid="tx")
         self.services = SimpleNamespace(get_characteristic=lambda _uuid: characteristic)
 
@@ -29,6 +30,29 @@ async def test_ble_transport_write_chooses_response():
     transport.client = FakeClient()
     await transport.write(b"abc")
     assert transport.client.writes == [("tx", b"abc", True)]
+
+
+@pytest.mark.asyncio
+async def test_ble_transport_rejects_false_connected_state(monkeypatch):
+    import bleak
+
+    class DisconnectedClient:
+        is_connected = False
+
+        def __init__(self, _address):
+            self.disconnect_called = False
+
+        async def connect(self):
+            return None
+
+        async def disconnect(self):
+            self.disconnect_called = True
+
+    monkeypatch.setattr(bleak, "BleakClient", DisconnectedClient)
+    link = BleTransport("missing-device")
+    with pytest.raises(ConnectionError, match="did not reach connected state"):
+        await link.__aenter__()
+    assert link.client is None
 
 
 @pytest.mark.asyncio
@@ -72,6 +96,7 @@ async def test_scan_enriches_and_prioritizes_detected_jbl(monkeypatch):
     assert [row["address"] for row in rows] == ["speaker", "mouse"]
     assert rows[0]["jbl_detection"]["pid"] == "20e3"
     assert rows[0]["service_data"] == {}
+    assert rows[0]["live"] is True
 
 
 class FakeProbeTransport:

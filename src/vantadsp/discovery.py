@@ -176,6 +176,8 @@ def _windows_jbl_row(device_id: str, interface_name: str) -> dict[str, Any] | No
         "address": address,
         "rssi": None,
         "paired": True,
+        "live": False,
+        "discovery_source": "windows-device-cache",
         "service_uuids": [],
         "service_data": {},
         "manufacturer_data": {},

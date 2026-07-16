@@ -15,7 +15,6 @@ from textual.containers import Horizontal, Vertical
 from textual.widgets import (
     Button,
     DataTable,
-    Footer,
     Header,
     Input,
     Label,
@@ -45,7 +44,8 @@ class VantaDSPApp(App[None]):
     SUB_TITLE = f"BLUETOOTH EQ CONTROL  /  v{__version__}  /  BUILD {__build_id__}"
     CSS = """
     Screen { background: #000000; color: #eeeeee; }
-    Header, Footer { background: #eeeeee; color: #000000; }
+    Header, #mono-footer { background: #eeeeee; color: #000000; }
+    #mono-footer { dock: bottom; height: 1; padding: 0 1; }
     #status-strip { height: 3; background: #111111; padding: 0 1; }
     .metric { width: 1fr; height: 3; padding: 0 1; border-left: ascii #555555; }
     #status-system { border-left: none; }
@@ -53,6 +53,7 @@ class VantaDSPApp(App[None]):
     TabbedContent { background: #000000; }
     TabPane { padding: 0 1 1 1; background: #000000; }
     Tabs { background: #000000; color: #aaaaaa; }
+    Tabs .underline--bar { background: #eeeeee; }
     Tab.-active { background: #eeeeee; color: #000000; text-style: bold; }
     .guide { height: 2; color: #bbbbbb; padding: 0 1; background: #111111; }
     #setup { height: 5; margin-top: 1; }
@@ -65,8 +66,22 @@ class VantaDSPApp(App[None]):
     Select:focus > SelectCurrent { border: ascii #ffffff; }
     SelectCurrent .arrow { display: none; }
     Select > SelectOverlay { border: ascii #ffffff; }
-    Toast { width: 42; max-width: 40%; padding: 0 1; margin-top: 0; border: ascii #ffffff; }
-    #devices { height: 1fr; border: ascii #555555; background: #000000; }
+    Toast, Toast.-information, Toast.-warning, Toast.-error {
+        width: 42; max-width: 40%; padding: 0 1; margin-top: 0;
+        background: #111111; color: #eeeeee; border: ascii #eeeeee;
+    }
+    Toast .toast--title { color: #eeeeee; }
+    #devices {
+        height: 1fr; border: ascii #555555; background: #000000;
+        scrollbar-color: #777777; scrollbar-background: #000000;
+    }
+    #devices > .datatable--header { background: #111111; color: #eeeeee; }
+    #devices > .datatable--cursor,
+    #devices:focus > .datatable--cursor,
+    #devices > .datatable--fixed-cursor,
+    #devices:focus > .datatable--fixed-cursor {
+        background: #eeeeee; color: #000000; text-style: bold;
+    }
     #profile-panel { height: 9; padding: 1; background: #090909; }
     #profile-row { height: 3; }
     #profile-row Select { width: 2fr; margin-right: 1; }
@@ -77,7 +92,10 @@ class VantaDSPApp(App[None]):
     .actions Button { min-width: 18; margin-right: 1; background: #111111; color: #eeeeee; border: ascii #555555; }
     .actions Button:hover, .actions Button:focus { background: #eeeeee; color: #000000; border: ascii #ffffff; }
     #apply { min-width: 22; background: #eeeeee; color: #000000; text-style: bold; }
-    #log { height: 1fr; border: ascii #555555; background: #000000; color: #dddddd; }
+    #log {
+        height: 1fr; border: ascii #555555; background: #000000; color: #dddddd;
+        scrollbar-color: #777777; scrollbar-background: #000000;
+    }
     """
     BINDINGS: ClassVar = [
         ("q", "quit", "Quit"),
@@ -94,6 +112,7 @@ class VantaDSPApp(App[None]):
         super().__init__()
         self.settings = settings or Settings.load()
         self._scan_rows: dict[str, dict[str, Any]] = {}
+        self._verified_target: tuple[str, str] | None = None
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -122,10 +141,11 @@ class VantaDSPApp(App[None]):
                 yield DataTable(id="devices", cursor_type="row", zebra_stripes=False)
                 with Horizontal(classes="actions"):
                     yield Button("S  SCAN DEVICES", id="scan")
-                    yield Button("P  PROBE SELECTED", id="probe")
+                    yield Button("P  CONNECT + VERIFY", id="probe")
             with TabPane("02  EQUALIZER", id="eq-tab"):
                 yield Static(
-                    "Choose a preset or edit gains. Preview is offline; Read and Apply connect to the speaker.",
+                    "LOCKED  Connect and verify the selected speaker on the Device tab before editing EQ.",
+                    id="eq-guide",
                     classes="guide",
                 )
                 with Vertical(id="profile-panel"):
@@ -149,14 +169,17 @@ class VantaDSPApp(App[None]):
                     classes="guide",
                 )
                 yield RichLog(id="log", markup=True, wrap=True, highlight=False)
-        yield Footer()
+        yield Static(
+            "q Quit   s Scan   p Connect   r Read EQ   v Preview   1 Device   2 EQ   3 Activity", id="mono-footer"
+        )
 
     def on_mount(self) -> None:
         table = self.query_one("#devices", DataTable)
-        table.add_columns("NAME", "DETECTED MODEL", "PID", "RSSI", "ADDRESS")
+        table.add_columns("NAME", "DETECTED MODEL", "PID", "STATUS", "RSSI", "ADDRESS")
         self._load_profile("balanced")
         self.log_message(f"START  |  VantaDSP v{__version__}  |  build={__build_id__}")
-        self.log_message("READY  |  Direct apply is enabled. Start with SCAN or select a known address.")
+        self._set_eq_access(False, "No verified speaker session")
+        self.log_message("READY  |  Scan/select a speaker, then CONNECT + VERIFY to unlock EQ controls.")
         if self.settings.auto_update:
             self.update_worker()
 
@@ -196,6 +219,46 @@ class VantaDSPApp(App[None]):
         for name, value in values.items():
             if value is not None:
                 self.query_one(f"#status-{name}", Static).update(f"{name.upper()}\n{value}")
+
+    def _current_target(self) -> tuple[str, str] | None:
+        address = self.query_one("#address", Input).value.strip()
+        value = self.query_one("#pid", Select).value
+        if not address or value is Select.BLANK:
+            return None
+        return address, str(value)
+
+    def _eq_access_allowed(self) -> bool:
+        return self._verified_target is not None and self._verified_target == self._current_target()
+
+    def _set_eq_access(self, allowed: bool, reason: str) -> None:
+        if not allowed:
+            self._verified_target = None
+        content = self.query_one("#main-tabs", TabbedContent)
+        if allowed:
+            content.enable_tab("eq-tab")
+        else:
+            content.disable_tab("eq-tab")
+            if content.active == "eq-tab":
+                content.active = "device-tab"
+        for selector in ("#profile", "#gains", "#read", "#preview", "#apply"):
+            self.query_one(selector).disabled = not allowed
+        self.query_one("#eq-guide", Static).update(
+            "CONNECTED + VERIFIED  Choose a preset or edit gains; Read and Apply reconnect to this speaker."
+            if allowed
+            else f"LOCKED  {reason}. Use CONNECT + VERIFY on the Device tab before editing EQ."
+        )
+
+    def _invalidate_connection(self, reason: str) -> None:
+        was_verified = self._verified_target is not None
+        self._set_eq_access(False, reason)
+        if was_verified:
+            self._status(device="NOT VERIFIED")
+            self.log_message(f"LOCK    |  EQ controls disabled  |  {reason}")
+
+    def _require_eq_access(self) -> None:
+        if not self._eq_access_allowed():
+            self._set_eq_access(False, "Speaker connection has not been verified")
+            raise RuntimeError("connect and verify the selected speaker before using EQ")
 
     def _address(self) -> str:
         value = self.query_one("#address", Input).value.strip()
@@ -252,11 +315,13 @@ class VantaDSPApp(App[None]):
             self._select_scan_row(row, automatic=False)
 
     def _select_scan_row(self, row: dict[str, Any], *, automatic: bool) -> None:
+        self._invalidate_connection("Device selection changed")
         address = str(row["address"])
         name = str(row["name"] or "UNNAMED")
         detection = row.get("jbl_detection", {})
         pid = detection.get("pid")
-        signal = "PAIRED" if row.get("rssi") is None else f"{row['rssi']} dBm"
+        live = bool(row.get("live", row.get("rssi") is not None))
+        signal = "LIVE / NOT VERIFIED" if live else "PAIRED CACHE / OFFLINE"
         self.query_one("#address", Input).value = address
         if pid:
             self.query_one("#pid", Select).value = str(pid)
@@ -270,8 +335,13 @@ class VantaDSPApp(App[None]):
             )
             self.log_message(f"DETECT  |  {model}  |  PID {pid}  |  {confidence}  |  {reason}  |  {address}")
             self.notify(
-                f"{model} / PID {pid} ({confidence} confidence). Confirm, then probe.",
+                (
+                    f"{model} / PID {pid} ({confidence} confidence). Run CONNECT + VERIFY."
+                    if live
+                    else f"{model} is known to Windows but was not seen over BLE. Wake it and scan again."
+                ),
                 title="JBL auto-detected",
+                severity="information" if live else "warning",
             )
             return
         self._status(device=f"SELECTED  {name}  {signal}")
@@ -287,6 +357,8 @@ class VantaDSPApp(App[None]):
         if event.value is Select.BLANK:
             return
         if event.select.id == "pid":
+            if self._verified_target is not None and self._current_target() != self._verified_target:
+                self._invalidate_connection("Model profile changed")
             pid = str(event.value)
             model = summarize_model(next(model for model in all_models() if str(model.get("pid")) == pid))
             self._status(protocol=f"PROFILE  {model['eq_path']}")
@@ -296,6 +368,10 @@ class VantaDSPApp(App[None]):
             self._load_profile(str(event.value))
 
     def on_input_changed(self, event: Input.Changed) -> None:
+        if event.input.id == "address":
+            if self._verified_target is not None and self._current_target() != self._verified_target:
+                self._invalidate_connection("Device address changed")
+            return
         if event.input.id != "gains" or not event.value.strip():
             return
         try:
@@ -323,13 +399,22 @@ class VantaDSPApp(App[None]):
         self._show_tab("device-tab")
 
     def action_eq_tab(self) -> None:
-        self._show_tab("eq-tab")
+        if self._eq_access_allowed():
+            self._show_tab("eq-tab")
+        else:
+            self._show_tab("device-tab")
+            self.notify(
+                "Select a speaker and run CONNECT + VERIFY first.",
+                title="Equalizer locked",
+                severity="warning",
+            )
 
     def action_activity_tab(self) -> None:
         self._show_tab("activity-tab")
 
     @work(exclusive=True)
     async def scan_worker(self) -> None:
+        self._invalidate_connection("A new device scan started")
         self._status(system="SCANNING BLE...")
         self.log_message("SCAN    |  Listening for BLE advertisements...")
         try:
@@ -343,11 +428,15 @@ class VantaDSPApp(App[None]):
                     row["name"] or "<unnamed>",
                     detection["model"] or ("JBL / unresolved" if detection["is_jbl"] else "-"),
                     detection["pid"] or "-",
-                    "PAIRED" if row["rssi"] is None else f"{row['rssi']} dBm",
+                    "LIVE" if row.get("live", row["rssi"] is not None) else "PAIRED CACHE",
+                    "-" if row["rssi"] is None else f"{row['rssi']} dBm",
                     row["address"],
                     key=row["address"],
                 )
-            detected = next((row for row in rows if row["jbl_detection"]["pid"]), None)
+            detected = next(
+                (row for row in rows if row["jbl_detection"]["pid"] and row.get("live", row["rssi"] is not None)),
+                None,
+            )
             if detected is not None:
                 self._select_scan_row(detected, automatic=True)
             signal_rows = [row for row in rows if row["rssi"] is not None]
@@ -370,6 +459,12 @@ class VantaDSPApp(App[None]):
     async def probe_worker(self) -> None:
         try:
             address, pid = self._address(), self._pid()
+            selected_row = self._scan_rows.get(address)
+            if selected_row is not None and not selected_row.get("live", selected_row.get("rssi") is not None):
+                raise RuntimeError(
+                    "this is cached Windows pairing metadata, not a live BLE advertisement; "
+                    "wake the speaker and scan again"
+                )
             self._save_context()
             self._status(system="PROBING...", device="CONNECTING")
             self.log_message(f"PROBE   |  PID {pid}  |  Read-only multi-generation capability check")
@@ -387,10 +482,15 @@ class VantaDSPApp(App[None]):
                 firmware = decoded[0].get("firmware_version", "unknown")
             services = len(result.get("services", []))
             supported = [name for name, item in result["probes"].items() if item["status"] == "supported-response"]
+            eq_path = str(result["detected_eq_path"])
+            if eq_path == "no-supported-eq-response":
+                raise RuntimeError("connection succeeded, but no supported EQ response was detected")
+            self._verified_target = (address, pid)
+            self._set_eq_access(True, "Connection and EQ route verified")
             self._status(
                 system="READY - PROBE COMPLETE",
-                device=f"ONLINE  FW {firmware}  {services} SERVICES",
-                protocol=f"{result['detected_eq_path']}  [{', '.join(supported) or 'none'}]",
+                device=f"VERIFIED  FW {firmware}  {services} SERVICES",
+                protocol=f"{eq_path}  [{', '.join(supported) or 'none'}]",
             )
             self.log_message(json.dumps(result, ensure_ascii=False, indent=2))
             self.notify(
@@ -398,6 +498,7 @@ class VantaDSPApp(App[None]):
                 title="Probe complete",
             )
         except Exception as exc:
+            self._set_eq_access(False, "Connection or EQ verification failed")
             self._status(system="PROBE FAILED", device="OFFLINE / ERROR")
             self._report_error("Probe", exc)
 
@@ -407,6 +508,7 @@ class VantaDSPApp(App[None]):
     @work(exclusive=True)
     async def read_worker(self) -> None:
         try:
+            self._require_eq_access()
             address, pid = self._address(), self._pid()
             path, frames = auto_read_frames(pid)
             self._status(system="READING EQ...", protocol=path)
@@ -425,11 +527,13 @@ class VantaDSPApp(App[None]):
             self._status(system=f"READY - {len(replies)} REPLY")
             self.notify(f"Received {len(replies)} reply frame(s).", title="EQ read complete")
         except Exception as exc:
+            self._set_eq_access(False, "EQ read or connection failed")
             self._status(system="READ FAILED")
             self._report_error("Read", exc)
 
     def action_preview(self) -> None:
         try:
+            self._require_eq_access()
             pid, gains = self._pid(), self._gains()
             path, frames = auto_eq_frames(pid, gains)
             self._status(system="PREVIEW READY", protocol=path)
@@ -451,6 +555,14 @@ class VantaDSPApp(App[None]):
             self.notify(str(exc), title="Preview rejected", severity="warning")
 
     def apply_eq(self) -> None:
+        try:
+            self._require_eq_access()
+        except Exception as exc:
+            self._show_tab("device-tab")
+            self._status(system="EQ LOCKED")
+            self.log_message(f"BLOCK   |  Apply  |  {exc}")
+            self.notify(str(exc), title="Equalizer locked", severity="warning")
+            return
         self._show_tab("activity-tab")
         self.apply_worker()
 
@@ -469,6 +581,7 @@ class VantaDSPApp(App[None]):
         read_replies: list[bytes] = []
         frames_written = 0
         try:
+            self._require_eq_access()
             address, pid, gains = self._address(), self._pid(), self._gains()
             path, frames = auto_eq_frames(pid, gains)
             read_path, read_frames = auto_read_frames(pid)
@@ -584,6 +697,7 @@ class VantaDSPApp(App[None]):
                 self._status(system="WRITE UNVERIFIED", protocol=f"{path} | NO DECODABLE READBACK")
                 self.notify(verification.message, title="Write not verified", severity="warning")
         except Exception as exc:
+            self._set_eq_access(False, "Apply connection or verification failed")
             self._status(system="WRITE FAILED")
             elapsed_ms = round((time.perf_counter() - started) * 1000)
             self.log_message(

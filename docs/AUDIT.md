@@ -1,14 +1,14 @@
 # Engineering, safety, and release audit
 
 Audit date: 2026-07-16
-Audited release candidate: `0.2.2`
+Audited release candidate: `0.2.4`
 
 ## Outcome
 
 | Gate | Result |
 |---|---|
-| Unit/integration/headless TUI tests | 59 passed |
-| Full-package branch-aware coverage | 71% (minimum gate 65%) |
+| Unit/integration/headless TUI tests | 61 passed |
+| Full-package branch-aware coverage | 72.83% (release gate 70%) |
 | Ruff lint and formatting | pass |
 | mypy package type check | pass |
 | Bandit static security scan | pass; no findings after reviewed B105 filter-name false positive is configured globally |
@@ -27,6 +27,8 @@ The first environment-wide dependency scan found vulnerabilities in unrelated pa
 | Risk | Control | Residual risk |
 |---|---|---|
 | Wrong protocol sent to a model | PID capability database, `auto_read_frames`, `auto_eq_frames`, range/count validation | APK data or a future firmware can still differ; run `probe` first |
+| Cached paired device mistaken for a live speaker | Scan rows identify `LIVE` vs `PAIRED CACHE`; only a live connection plus supported EQ response unlocks the TUI | A speaker can stop advertising after verification; every read/write reconnects and failures immediately relock EQ |
+| Address/model changed after verification | Verified target is an exact `(address, PID)` tuple; either field changing invalidates it | Windows/BLE identity behavior can vary after reboot or re-pairing; rescan and verify again |
 | Accidental mutation | CLI dry-run; TUI clearly labels direct apply; preview shows encoded bytes | A TUI apply click writes immediately; raw mode remains expert-only |
 | Device identifier leakage | APK/captures/config/audit ignored by Git; audit stores 16-char SHA-256-derived fingerprint | Terminal screenshots and manually copied output can still reveal addresses |
 | Corrupt or partial BLE response | frame length validation and decode errors | Protocol 4 multi-notification reassembly is limited to the notifications returned by one transaction window |
@@ -40,9 +42,9 @@ The first environment-wide dependency scan found vulnerabilities in unrelated pa
 - Known byte-vector tests cover legacy requests, simple EQ, long-frame parametric EQ, Protocol 4 query, category mapping, and Grip quantization.
 - Database tests assert 37 APK models and build neutral packets for all 21 models declaring EQ.
 - Profile matrix tests resolve and encode all 24 profiles across all 21 EQ-capable PIDs (504 model/profile combinations).
-- Negative tests cover invalid gain counts, non-integer legacy levels, invalid UI steps, unknown PID/preset, malformed configuration, and TUI write lock.
-- Fake transports exercise write response selection and probe classification without requiring Bluetooth hardware.
-- Textual `run_test` verifies the TUI mounts headlessly with direct-apply controls.
+- Negative tests cover invalid gain counts, non-integer legacy levels, invalid UI steps, unknown PID/preset, malformed configuration, cached/offline devices, and the TUI connection gate.
+- Fake transports exercise write response selection, false post-connect state, and probe classification without requiring Bluetooth hardware.
+- Textual `run_test` verifies the locked startup state, live verification unlock, target-change relock, cached-device rejection, and verified write path.
 - Hardware verification is intentionally opt-in and currently covers JBL Charge 6 PID `20E3`, firmware `3.0.7.1`.
 
 ## Known limitations

@@ -73,6 +73,8 @@ def test_windows_paired_metadata_recovers_pid_and_address():
     )
     assert row is not None
     assert row["address"] == "A1:B2:C3:D4:E5:F6"
+    assert row["live"] is False
+    assert row["discovery_source"] == "windows-device-cache"
     assert row["jbl_detection"] == {
         "is_jbl": True,
         "pid": "20e3",

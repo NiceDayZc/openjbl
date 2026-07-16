@@ -27,6 +27,8 @@ async def scan_ble(timeout: float = 8.0) -> list[dict[str, Any]]:
             "name": device.name or advertisement.local_name or "",
             "address": address,
             "rssi": advertisement.rssi,
+            "live": True,
+            "discovery_source": "ble-advertisement",
             "service_uuids": list(advertisement.service_uuids or []),
             "service_data": {str(k): bytes(v).hex() for k, v in advertisement.service_data.items()},
             "manufacturer_data": {str(k): bytes(v).hex() for k, v in advertisement.manufacturer_data.items()},
@@ -69,14 +71,19 @@ class BleTransport:
 
         self.client = BleakClient(self.address)
         await self.client.connect()
+        if not bool(self.client.is_connected):
+            await self.client.disconnect()
+            self.client = None
+            raise ConnectionError(f"BLE client did not reach connected state for {self.address}")
         return self
 
     async def __aexit__(self, *_: object) -> None:
-        if self.client is not None:
-            await self.client.disconnect()
+        client, self.client = self.client, None
+        if client is not None:
+            await client.disconnect()
 
     def _connected_client(self) -> Any:
-        if self.client is None:
+        if self.client is None or not bool(self.client.is_connected):
             raise RuntimeError("transport is not connected; use 'async with BleTransport(...)'")
         return self.client
 

@@ -2,6 +2,16 @@
 
 All notable changes follow Keep a Changelog style. This project uses semantic versioning while its public API stabilizes.
 
+## [0.2.4] - 2026-07-16
+
+### Fixed
+
+- Locked the Equalizer tab and every EQ control until a live connection and supported EQ response are verified.
+- Invalidated the verified target whenever the address/model changes or a read/write connection fails.
+- Distinguished live BLE advertisements from cached Windows paired-device metadata and stopped auto-selecting offline cache rows.
+- Added a strict post-connect `is_connected` transport check and cleared stale clients after disconnect.
+- Replaced theme-colored Footer elements and DataTable/scrollbar accents with deterministic monochrome styling.
+
 ## [0.2.3] - 2026-07-16
 
 ### Changed
