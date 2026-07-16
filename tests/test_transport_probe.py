@@ -2,8 +2,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from jbl_pc import probe, protocol
-from jbl_pc.transport import BleTransport
+from vantadsp import probe, protocol
+from vantadsp.transport import BleTransport
 
 
 class FakeClient:

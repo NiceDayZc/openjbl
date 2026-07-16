@@ -27,7 +27,7 @@ jobs:
       - run: pytest
       - run: ruff check .
       - run: ruff format --check .
-      - run: mypy src/jbl_pc
+      - run: mypy src/vantadsp
 
   security-and-package:
     runs-on: ubuntu-latest
@@ -39,7 +39,7 @@ jobs:
           cache: pip
       - run: python -m pip install --upgrade pip
       - run: python -m pip install -e ".[dev]"
-      - run: bandit -c pyproject.toml -r src/jbl_pc
+      - run: bandit -c pyproject.toml -r src/vantadsp
       - run: pip-audit .
       - run: python -m build
       - run: twine check dist/*

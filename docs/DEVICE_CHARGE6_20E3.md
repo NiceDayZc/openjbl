@@ -1,37 +1,37 @@
 # Hardware-confirmed profile: JBL Charge 6
 
-ตรวจจริงผ่าน Windows/BLE วันที่ 2026-07-16 โดยส่ง read-only requests และ no-op write/read-back
+Validated over Windows BLE on 2026-07-16 using read-only requests and a no-op write/read-back cycle.
 
-| รายการ | ค่าที่ยืนยัน |
+| Field | Confirmed value |
 |---|---|
-| Windows name | redacted (device-specific advertising name) |
+| Windows name | Redacted device-specific advertising name |
 | Model | JBL Charge 6 |
 | PID | `20E3` |
 | MID | `01` |
 | Firmware | `3.0.7.1` |
 | APK transport | `PROTOCOL_BLE` |
-| EQ generation | legacy long-frame parametric C2, ไม่ใช่ Protocol 4 |
-| Read EQ | command `98`, response `99` |
-| Write EQ | command `97`, response `99` |
+| EQ generation | Legacy long-frame parametric C2, not Protocol 4 |
+| Read EQ | Command `98`, response `99` |
+| Write EQ | Command `97`, response `99` |
 | Active/category | `C2/C2` |
 | Sample rate | 48000 |
-| Authentication | Windows pairing/bond เพียงพอใน session นี้; ไม่มี app-layer handshake ก่อน EQ read/write |
+| Authentication | Windows pairing/bonding was sufficient; no application-layer handshake preceded EQ reads or writes |
 
-## GATT ที่อ่านจากเครื่องจริง
+## GATT observed on hardware
 
-- `65786365-6c70-6f69-6e74-2e636f6d0000`: vendor service หลัก
+- `65786365-6c70-6f69-6e74-2e636f6d0000`: primary vendor service
   - `...0001`: notify + read
-  - `...0002`: write + write-without-response
-- `65786365-6c70-6f69-6e74-2e636e6c0000`: vendor service ชุดที่สอง
+  - `...0002`: write + write without response
+- `65786365-6c70-6f69-6e74-2e636e6c0000`: secondary vendor service
   - `...0001`: notify + read
-  - `...0002`: write + write-without-response
+  - `...0002`: write + write without response
 - `00001800`: GAP
 - `00001801`: GATT
-- `0000FE2C`: Google service พร้อม characteristics `FE2C1234..123A`
+- `0000FE2C`: Google service with characteristics `FE2C1234..123A`
 
-Windows ยังลงทะเบียน service UUID `65786365-6C70-6F69-6E74-2E04FFE32001` บน BR/EDR side ซึ่ง encode PID/MID (`E3 20`, `01`)
+Windows also registered service UUID `65786365-6C70-6F69-6E74-2E04FFE32001` on the BR/EDR side. It encodes PID/MID (`E3 20`, `01`).
 
-## Custom EQ ที่อ่านได้ก่อนทดสอบ
+## Custom EQ read before validation
 
 | Band | Type | Frequency | Gain | Q |
 |---:|---|---:|---:|---:|
@@ -43,21 +43,21 @@ Windows ยังลงทะเบียน service UUID `65786365-6C70-6F69-6E
 | 6 | peaking | 4000 | -0.5 dB | 2.0 |
 | 7 | high shelf | 8000 | +1.0 dB | 0.7 |
 
-ส่ง frame `97` ด้วยค่าข้างต้นกลับไปหนึ่งครั้ง จากนั้น firmware ตอบ `99` และ request `98` รอบใหม่ให้ค่าเดิมตรงทุก byte จึงไม่มี net EQ change
+The same values were sent once in a `97` frame. Firmware returned `99`; a subsequent `98` request reproduced every byte, confirming no net EQ change.
 
-คำสั่ง `set-auto --pid 20e3` ถูกทดสอบ end-to-end ด้วยค่าเดิมชุดเดียวกันแล้ว: auto-selector เลือก `legacy-parametric/0x97`, response `0x99` ตรงกับ TX payload และ read-back รอบถัดไปตรงกันทุก byte
+`set-auto --pid 20e3` was also validated end to end with the same no-op values. The selector chose `legacy-parametric/0x97`, the `0x99` response matched the TX payload, and the next read-back matched byte for byte.
 
-## UI limits จาก APK
+## APK UI limits
 
-- Custom band 1: -9..+6 dB; ค่าลบทีละ 0.75 dB, ค่าศูนย์/บวกทีละ 0.5 dB
-- Custom bands 2–7: -6..+6 dB ทีละ 0.5 dB
-- Custom frequency/Q ถูกกำหนดเป็นชุดในตาราง; UI ปกติแก้เฉพาะ gain
-- preset ภายใน firmware/APK อาจใช้ frequency/Q และ gain นอก custom UI เช่น preset Energetic มี +7 dB ที่ 200 Hz จึงไม่ควรตีความ UI limit เป็น DSP hard limit
+- Custom band 1: -9..+6 dB; negative values use 0.75 dB steps, while zero and positive values use 0.5 dB steps.
+- Custom bands 2-7: -6..+6 dB in 0.5 dB steps.
+- Custom frequency and Q are fixed by a table; the normal UI changes gain only.
+- Built-in firmware/APK presets may exceed custom-UI frequency, Q, or gain limits. For example, Energetic includes +7 dB at 200Hz, so UI limits must not be interpreted as DSP hard limits.
 
-## Unsupported บนเครื่องนี้
+## Unsupported on this device
 
-- `61` EQ mode → `EE 61`
-- `6C` simple EQ → `EE 6C`
-- Protocol 4 feature `0E02`/Grip `0E7F` ไม่ใช่เส้นทางที่รุ่นนี้ใช้
+- `61` EQ mode returned `EE 61`.
+- `6C` simple EQ returned `EE 6C`.
+- Protocol 4 feature `0E02` and Grip `0E7F` are not used by this model.
 
-การรัน full read-only probe รอบล่าสุดใช้ BLE random address ที่ถูกตัดออกจากเอกสาร public; address นี้เปลี่ยนได้และไม่ใช่ identity ถาวร ผล probe คือ firmware/advanced ตอบ, simple/mode ตอบ `EE`, และ Protocol 4 timeout ตรงกับ profile ข้างต้น
+The latest full read-only probe used a random BLE address omitted from public documentation. That address can change and is not a permanent identity. Firmware and advanced requests responded, simple and mode returned `EE`, and Protocol 4 timed out, all consistent with this profile.

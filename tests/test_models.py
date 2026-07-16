@@ -1,6 +1,6 @@
 import pytest
 
-from jbl_pc.models import (
+from vantadsp.models import (
     all_models,
     auto_eq_frames,
     auto_read_frames,

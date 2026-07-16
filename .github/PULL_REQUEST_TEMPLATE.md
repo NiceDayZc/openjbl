@@ -13,6 +13,6 @@
 
 - [ ] `pytest`
 - [ ] `ruff check . && ruff format --check .`
-- [ ] `mypy src/jbl_pc`
-- [ ] `bandit -c pyproject.toml -r src/jbl_pc`
+- [ ] `mypy src/vantadsp`
+- [ ] `bandit -c pyproject.toml -r src/vantadsp`
 - [ ] `python -m build && twine check dist/*`

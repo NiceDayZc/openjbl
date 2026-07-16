@@ -22,82 +22,152 @@ class SoundProfile:
 
 PROFILES = (
     SoundProfile(
-        "flat", "Flat / Reference", "ไม่แต่งโทน ใช้เป็นจุดเริ่มต้นและเช็กระดับเสียง", (0, 0, 0, 0, 0, 0, 0), ("reference",)
+        "flat",
+        "Flat / Reference",
+        "No tonal shaping; use this as a level-checking baseline",
+        (0, 0, 0, 0, 0, 0, 0),
+        ("reference",),
     ),
     SoundProfile(
-        "balanced", "Balanced", "สมดุล ฟังได้นาน รายละเอียดครบโดยไม่เร่งย่านใดมาก", (1, 0.5, 0, 0, 0, 0.5, 1), ("daily",)
+        "balanced",
+        "Balanced",
+        "Even, fatigue-free tuning with no strongly emphasized range",
+        (1, 0.5, 0, 0, 0, 0.5, 1),
+        ("daily",),
     ),
     SoundProfile(
-        "bass", "Bass Heavy", "เบสหนักชัดเจน เน้น 125-250 Hz แต่เก็บกลางไม่ให้ขุ่น", (6, 4, 1, -1, -1, 0, 1), ("bass",)
+        "bass",
+        "Bass Heavy",
+        "Strong 125-250 Hz weight with restrained mids to limit muddiness",
+        (6, 4, 1, -1, -1, 0, 1),
+        ("bass",),
     ),
     SoundProfile(
         "deep-bass",
         "Deep Bass",
-        "น้ำหนักต่ำลึกกว่า Bass Heavy และลด low-mid เพื่อเพิ่มช่องว่าง",
+        "Deeper low-end weight with reduced low-mids for additional space",
         (6, 3, 0, -2, -1, 0, 0.5),
         ("bass", "electronic"),
     ),
     SoundProfile(
         "punch",
         "Punch Bass",
-        "แรงกระแทกกระชับ เน้น kick และจังหวะมากกว่าความบวม",
+        "Tight impact focused on kick and rhythm rather than bloom",
         (4, 5, 2, -1, -1, 0.5, 1),
         ("bass", "rock"),
     ),
-    SoundProfile("warm", "Warm", "อุ่น นุ่ม ลดความคมช่วงบน เหมาะกับการฟังนาน", (3, 2, 1, 0.5, 0, -0.5, -1), ("relaxed",)),
     SoundProfile(
-        "loudness", "Low-volume Loudness", "ชดเชยการฟังเบาโดยยกปลายต่ำและสูง", (4, 2, 0, -1, 0, 1.5, 3), ("quiet",)
+        "warm", "Warm", "Smooth and relaxed with reduced upper-range bite", (3, 2, 1, 0.5, 0, -0.5, -1), ("relaxed",)
     ),
     SoundProfile(
-        "clear", "Crystal Clear", "ลดความอับช่วงต่ำกลางและเพิ่ม presence/air", (0, -1, -2, 0, 2, 3, 4), ("clarity",)
+        "loudness",
+        "Low-volume Loudness",
+        "Lifts both extremes to compensate at low playback levels",
+        (4, 2, 0, -1, 0, 1.5, 3),
+        ("quiet",),
     ),
     SoundProfile(
-        "bright", "Bright", "ปลายเสียงเปิดและเด่น เหมาะกับแหล่งเสียงที่ทึบ", (-0.75, -0.5, -1, 0, 2, 4, 5), ("treble",)
+        "clear",
+        "Crystal Clear",
+        "Reduces low-mid congestion and adds presence and air",
+        (0, -1, -2, 0, 2, 3, 4),
+        ("clarity",),
+    ),
+    SoundProfile(
+        "bright",
+        "Bright",
+        "Open and prominent top end for dark-sounding sources",
+        (-0.75, -0.5, -1, 0, 2, 4, 5),
+        ("treble",),
     ),
     SoundProfile(
         "detail",
         "Detail Monitor",
-        "โทนตรวจรายละเอียด ลดเบสส่วนเกินและยกกลางบนพอประมาณ",
+        "Analytical tuning with reduced excess bass and moderate upper-mid lift",
         (-1.5, -1, -1, 1, 2, 2.5, 2),
         ("monitor",),
     ),
     SoundProfile(
-        "vocal", "Vocal Focus", "ดันเสียงร้องและบทสนทนา ลดเบสที่บังย่านกลาง", (-0.75, -1, -1, 3, 4, 2, 0), ("voice",)
+        "vocal",
+        "Vocal Focus",
+        "Brings vocals and dialogue forward while reducing masking bass",
+        (-0.75, -1, -1, 3, 4, 2, 0),
+        ("voice",),
     ),
-    SoundProfile("podcast", "Podcast / Speech", "เน้นความชัดของคำพูดและลด rumble", (-3, -2, -1, 3, 4, 2, -1), ("voice",)),
     SoundProfile(
-        "acoustic", "Acoustic", "รักษา body ของเครื่องสายและเพิ่มรายละเอียดปลายเสียง", (1, 1, 0.5, 1, 1.5, 2, 2), ("music",)
+        "podcast",
+        "Podcast / Speech",
+        "Prioritizes speech intelligibility and reduces rumble",
+        (-3, -2, -1, 3, 4, 2, -1),
+        ("voice",),
     ),
-    SoundProfile("rock", "Rock", "kick/guitar ชัด มีแรงปะทะและปลายเสียงเปิด", (4, 3, -1, 1, 3, 3, 2), ("music", "rock")),
-    SoundProfile("metal", "Metal", "คุม low-mid ไม่ให้กีตาร์ทับกันและยก attack", (3, 1, -2, 0, 3, 4, 2), ("music", "metal")),
     SoundProfile(
-        "hip-hop", "Hip-Hop", "เบสใหญ่ เสียงร้องยังชัด และ hi-hat มีประกาย", (6, 4, 0, -1, 1, 2, 3), ("music", "bass")
+        "acoustic",
+        "Acoustic",
+        "Preserves instrument body while adding upper detail",
+        (1, 1, 0.5, 1, 1.5, 2, 2),
+        ("music",),
+    ),
+    SoundProfile(
+        "rock",
+        "Rock",
+        "Clear kick and guitars with impact and an open top end",
+        (4, 3, -1, 1, 3, 3, 2),
+        ("music", "rock"),
+    ),
+    SoundProfile(
+        "metal",
+        "Metal",
+        "Controls low-mid guitar overlap and emphasizes attack",
+        (3, 1, -2, 0, 3, 4, 2),
+        ("music", "metal"),
+    ),
+    SoundProfile(
+        "hip-hop",
+        "Hip-Hop",
+        "Large bass with clear vocals and crisp hi-hats",
+        (6, 4, 0, -1, 1, 2, 3),
+        ("music", "bass"),
     ),
     SoundProfile(
         "edm",
         "EDM",
-        "ทรง V สำหรับ electronic: sub/kick และปลายเสียงเด่น",
+        "V-shaped electronic tuning with prominent sub, kick, and top end",
         (6, 4, -1, -2, 0, 3, 5),
         ("music", "electronic"),
     ),
-    SoundProfile("pop", "Pop", "กระชับ สด และดันเสียงร้องเล็กน้อย", (3, 2, 0, 1, 2, 2.5, 3), ("music",)),
-    SoundProfile("jazz", "Jazz", "อุ่นเป็นธรรมชาติ รักษา texture และ ambience", (2, 1, 0.5, 1, 1, 1.5, 2), ("music",)),
+    SoundProfile("pop", "Pop", "Tight, lively tuning with a subtle vocal lift", (3, 2, 0, 1, 2, 2.5, 3), ("music",)),
     SoundProfile(
-        "classical", "Classical", "ไดนามิกเป็นกลาง เพิ่มอากาศและตำแหน่งชิ้นดนตรี", (0, 0, -0.5, 0, 1, 2, 3), ("music",)
+        "jazz", "Jazz", "Natural warmth that preserves texture and ambience", (2, 1, 0.5, 1, 1, 1.5, 2), ("music",)
     ),
     SoundProfile(
-        "movie", "Cinema", "แรงปะทะต่ำพร้อม dialogue presence และบรรยากาศด้านบน", (5, 3, 0, 1, 3, 2, 3), ("media",)
+        "classical",
+        "Classical",
+        "Neutral dynamics with added air and spatial definition",
+        (0, 0, -0.5, 0, 1, 2, 3),
+        ("music",),
     ),
     SoundProfile(
-        "gaming", "Gaming / Footsteps", "ลดแรงเบสที่กลบรายละเอียดและเน้น 2-4 kHz", (0, -1, -2, 0, 4, 5, 2), ("gaming",)
+        "movie", "Cinema", "Low-end impact with dialogue presence and upper ambience", (5, 3, 0, 1, 3, 2, 3), ("media",)
     ),
     SoundProfile(
-        "outdoor", "Outdoor", "ชดเชยการสูญเสียเบสกลางแจ้งและคงความชัดระยะไกล", (6, 4, 1, 0, 2, 3, 3), ("outdoor",)
+        "gaming",
+        "Gaming / Footsteps",
+        "Reduces masking bass and emphasizes the 2-4 kHz detail range",
+        (0, -1, -2, 0, 4, 5, 2),
+        ("gaming",),
+    ),
+    SoundProfile(
+        "outdoor",
+        "Outdoor",
+        "Compensates for outdoor bass loss while retaining projection",
+        (6, 4, 1, 0, 2, 3, 3),
+        ("outdoor",),
     ),
     SoundProfile(
         "night",
         "Night / Apartment",
-        "ลด sub-bass ที่ส่งผ่านผนัง แต่คงเสียงพูดและรายละเอียด",
+        "Reduces wall-transmitted sub-bass while preserving speech and detail",
         (-4.5, -3, -1, 1, 2, 1, 0),
         ("quiet",),
     ),

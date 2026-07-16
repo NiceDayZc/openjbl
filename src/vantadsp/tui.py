@@ -34,8 +34,8 @@ from .transport import BleTransport, scan_ble
 MODEL_OPTIONS = [(f"{model.get('deviceName')}  ·  {model.get('pid')}", str(model.get("pid"))) for model in all_models()]
 
 
-class JblControlApp(App[None]):
-    TITLE = "JBL PC CONTROL"
+class VantaDSPApp(App[None]):
+    TITLE = "VANTADSP"
     SUB_TITLE = "MONOCHROME BLUETOOTH / DSP WORKSTATION"
     CSS = """
     Screen { background: #000000; color: #eeeeee; }
@@ -390,7 +390,7 @@ class JblControlApp(App[None]):
 
 
 def main() -> None:
-    JblControlApp().run()
+    VantaDSPApp().run()
 
 
 if __name__ == "__main__":

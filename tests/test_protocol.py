@@ -2,8 +2,8 @@ import math
 
 import pytest
 
-from jbl_pc.models import auto_eq_frames, find_models
-from jbl_pc.protocol import (
+from vantadsp.models import auto_eq_frames, find_models
+from vantadsp.protocol import (
     EQ_CATEGORIES,
     LegacyFrame,
     LegacyStreamDecoder,

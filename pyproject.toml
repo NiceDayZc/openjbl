@@ -3,9 +3,9 @@ requires = ["setuptools>=83", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "jbl-pc-control"
+name = "vantadsp"
 version = "0.2.0"
-description = "Safe PC-side JBL Portable Bluetooth protocol, EQ, CLI, and TUI toolkit"
+description = "VantaDSP: safe JBL Portable Bluetooth protocol, EQ, CLI, and TUI toolkit"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
@@ -27,9 +27,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/NiceDayZc/jbl-pc-control"
-Repository = "https://github.com/NiceDayZc/jbl-pc-control.git"
-Issues = "https://github.com/NiceDayZc/jbl-pc-control/issues"
+Homepage = "https://github.com/NiceDayZc/vantadsp"
+Repository = "https://github.com/NiceDayZc/vantadsp.git"
+Issues = "https://github.com/NiceDayZc/vantadsp/issues"
 
 [project.optional-dependencies]
 dev = [
@@ -46,31 +46,31 @@ dev = [
 ]
 
 [project.scripts]
-jblctl = "jbl_pc.cli:main"
-jbltui = "jbl_pc.tui:main"
+vantactl = "vantadsp.cli:main"
+vantatui = "vantadsp.tui:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-jbl_pc = ["data/*.json", "py.typed"]
+vantadsp = ["data/*.json", "py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--strict-markers --cov=jbl_pc --cov-report=term-missing"
+addopts = "--strict-markers --cov=vantadsp --cov-report=term-missing"
 
 [tool.coverage.run]
 branch = true
-source = ["jbl_pc"]
+source = ["vantadsp"]
 
 [tool.coverage.report]
 fail_under = 65
 show_missing = true
 omit = [
-  "src/jbl_pc/cli.py",
-  "src/jbl_pc/probe.py",
-  "src/jbl_pc/transport.py",
-  "src/jbl_pc/tui.py",
+  "src/vantadsp/cli.py",
+  "src/vantadsp/probe.py",
+  "src/vantadsp/transport.py",
+  "src/vantadsp/tui.py",
 ]
 
 [tool.ruff]

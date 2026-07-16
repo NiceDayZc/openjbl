@@ -1,52 +1,54 @@
-# JBL Portable 6.9.12 — protocol notes
+# JBL Portable 6.9.12 protocol notes
 
-วันที่วิเคราะห์: 2026-07-16
-ไฟล์: `JBL+Portable_6.9.12_APKPure.xapk`
-package: `com.harman.ble.jbllink`
+Analysis date: 2026-07-16
 
-เอกสารนี้แยก “ยืนยันจาก byte builder/parser ใน APK” ออกจาก “ต้องยืนยันกับ hardware” ชัดเจน
+Source: `JBL+Portable_6.9.12_APKPure.xapk`
 
-## Transport ที่ยืนยันจาก APK
+Package: `com.harman.ble.jbllink`
 
-| Layer | ค่า |
+This reference distinguishes facts confirmed by APK byte builders/parsers from behavior that still requires hardware validation.
+
+## Transport confirmed from the APK
+
+| Layer | Value |
 |---|---|
 | BLE default service | `65786365-6C70-6F69-6E74-2E636F6D0000` |
 | RX notify characteristic | `...0001` |
 | TX write characteristic | `...0002` |
 | CCCD | `00002902-0000-1000-8000-00805F9B34FB` |
 | Classic SPP | `00001101-0000-1000-8000-00805F9B34FB` |
-| requested MTU | 512 bytes (ตัวแอปอาจได้จริงต่ำกว่า) |
-| command timeout | 2000 ms จาก asset `AppConfig.json` (class fallback 1500 ms) |
-| rewrite count | 3 |
+| Requested MTU | 512 bytes; the negotiated value may be lower |
+| Command timeout | 2000ms from `AppConfig.json`; class fallback is 1500ms |
+| Rewrite count | 3 |
 
-ชื่อ UUID `65786365-6C70-6F69-6E74-2E636F6D` ถอด ASCII ได้เป็น `excelpoint.com` ลำโพงบางรุ่นมี service UUID ซึ่ง encode PID/MID และแอปมี fallback กลับไป default UUID
+The UUID prefix `65786365-6C70-6F69-6E74-2E636F6D` decodes as ASCII `excelpoint.com`. Some models expose a service UUID encoding PID/MID; the app can fall back to the default UUID.
 
-BLE advertisement service IDs ที่ scan filter รู้จัก:
+BLE advertisement service IDs recognized by the scan filter:
 
-- `DFFD` — Harman service data Pro
-- `FDDF` — Protocol 4
-- `FC69` — Protocol 1
-- `0ECB` — PartyBox
+- `DFFD`: Harman service data Pro
+- `FDDF`: Protocol 4
+- `FC69`: Protocol 1
+- `0ECB`: PartyBox
 
-## Legacy frame
+## Legacy frames
 
-Normal:
+Normal frame:
 
 ```text
 AA | command:1 | payload_length:1 | payload:N
 ```
 
-Long frame (advanced EQ และ long response บางคำสั่ง):
+Long frame, used by advanced EQ and some long responses:
 
 ```text
 AA | command:1 | payload_length_be:2 | payload:N
 ```
 
-ไม่มี CRC ใน EQ frame ชุดนี้ การตอบรับคำสั่ง set หลายตัวเป็น command `00` พร้อม payload `[original_command, status]`, status `00` คือสำเร็จ
+These EQ frames have no CRC. Many set acknowledgements use command `00` with payload `[original_command, status]`; status `00` means success.
 
 ## EQ command IDs
 
-| Direction | Hex | ความหมาย |
+| Direction | Hex | Meaning |
 |---|---:|---|
 | request | `61` | EQ mode |
 | response | `62` | EQ mode |
@@ -67,7 +69,7 @@ Set payload:
 category | count | (parameter_type | signed_level) * count
 ```
 
-parameter type: bass=1, mid=2, treble=3. Custom category คือ `C1`; custom อีก slot คือ `C2` ใน model เดียวกัน
+Parameter types are bass=1, mid=2, and treble=3. Custom category is `C1`; a second custom slot appears as `C2` in the same model.
 
 Response payload:
 
@@ -75,17 +77,17 @@ Response payload:
 scope | active_category | [category | count | (type | value)*count]...
 ```
 
-### Advanced level EQ
+### Advanced-level EQ
 
 ```text
 active_category | C1 | scope | count | (band_index | signed_level)*count
 ```
 
-APK ใช้ scope=6 เป็นค่าเริ่มต้น และรองรับ band index 1..7 แต่ product config เป็นตัวตัดสินว่ารุ่นใดเปิด feature นี้
+The APK defaults to scope=6 and supports band indices 1..7. Product configuration determines whether a model exposes this feature.
 
-### Parametric/C2 EQ (legacy transport)
+### Legacy parametric/C2 EQ
 
-SetAdvancedNewEQCommand สร้าง payload ดังนี้:
+`SetAdvancedNewEQCommand` builds:
 
 ```text
 active_category
@@ -95,7 +97,7 @@ sample_rate:u32 big-endian
 bands...
 ```
 
-แต่ละ band ยาว 13 bytes:
+Each band occupies 13 bytes:
 
 ```text
 filter_type:u8
@@ -104,16 +106,16 @@ frequency:f32 big-endian
 Q:f32 big-endian
 ```
 
-filter type: low-shelf=0, peaking=1, high-shelf=2, low-pass=3, high-pass=4
+Filter types: low-shelf=0, peaking=1, high-shelf=2, low-pass=3, high-pass=4.
 
-การที่ active category ซ้ำ 2 byte ยืนยันจากทั้ง builder และ response parser: parser อ่าน count ที่ offset 2 และ sample rate ที่ offset 3..6
+Both builder and response parser confirm the repeated active-category byte. The parser reads band count at offset 2 and sample rate at offsets 3..6.
 
 ## Protocol 4
 
-Header 8 bytes ใช้ little-endian:
+The eight-byte header is little-endian:
 
 ```text
-identifier:u16 = DD00 (bytes 00 DD; DD01 เมื่อ forward)
+identifier:u16 = DD00 (bytes 00 DD; DD01 when forwarded)
 command_id:u16       GET=0001, SET=0002
 packet_count:u8
 packet_index:u8
@@ -121,7 +123,7 @@ payload_length:u16
 payload
 ```
 
-packet payload สูงสุด 490 bytes แอปจึงได้ ATT write ไม่เกินประมาณ 500 bytes
+Maximum packet payload is 490 bytes, keeping the app's ATT write at approximately 500 bytes or less.
 
 SET feature payload:
 
@@ -133,13 +135,13 @@ value
 
 EQ feature IDs:
 
-- `0E01` EQInfoQuery
-- `0E02` EQInfo
-- `0E7F` SetEQ (ใช้กับ Grip/Go5/บาง Essential SE)
+- `0E01`: EQInfoQuery
+- `0E02`: EQInfo
+- `0E7F`: SetEQ for Grip, Go 5, and some Essential SE models
 
-ค่าขอ EQ ทั้งหมดคือ feature `0E01`, length=1, value=`FF`
+The all-EQ request is feature `0E01`, length=1, value=`FF`.
 
-Protocol 4 parametric EQ value ของ feature `0E02`:
+Protocol 4 parametric value for feature `0E02`:
 
 ```text
 mapped_category:u8
@@ -152,36 +154,36 @@ reserved:u32be = 0
 7 * band
 ```
 
-แต่ละ band ยังยาว 13 bytes แต่ลำดับเปลี่ยนเป็น:
+Each band remains 13 bytes, but field order is:
 
 ```text
 filter_type | frequency:f32be | gain:f32be | Q:f32be
 ```
 
-Protocol 4 map category ที่พบ: bass boost 1 `01→50`, vocal `03→02`, signature `06→80`, relaxing `07→81`, energetic `08→82`, extreme `09→83`, reserved 2 `22→85`, custom `C1/C2→C1`
+Observed category mapping: bass boost 1 `01->50`, vocal `03->02`, signature `06->80`, relaxing `07->81`, energetic `08->82`, extreme `09->83`, reserved 2 `22->85`, custom `C1/C2->C1`.
 
-รุ่น Grip/Go5/Essential SE บางตัวใช้ feature `0E7F` และ payload แบบ quantized 7 ค่าแทน parametric เต็มรูปแบบ รูปแบบ custom ที่ถอดจาก `getGripEQPayload` คือ:
+Some Grip, Go 5, and Essential SE devices use feature `0E7F` with seven quantized values rather than full parametric bands. The custom form reconstructed from `getGripEQPayload` is:
 
 ```text
 mapped_category:C1 | band1_index | band2_index | ... | band7_index | optional firmware tail
 ```
 
-- band 1 index 0..12 แทน +6..0 ทีละ 0.5 และ index 13..24 แทน -0.75..-9 ทีละ 0.75
-- band 2–7 index 0..24 แทน +6..-6 ทีละ 0.5
-- PID ที่ APK แยกเป็น Grip-style: `2132`, `2168`, `2185`, `218A`
+- Band 1 indices 0..12 represent +6..0 in 0.5 dB steps; indices 13..24 represent -0.75..-9 in 0.75 dB steps.
+- Band 2-7 indices 0..24 represent +6..-6 in 0.5 dB steps.
+- APK-classified Grip-style PIDs: `2132`, `2168`, `2185`, `218A`.
 
-Python รองรับผ่าน `set-grip` และ `set-auto`; คำสั่งหลังบังคับเลือก variant จาก PID จึงไม่เดาจากชื่อ advertising
+VantaDSP exposes these through `set-grip` and `set-auto`. The latter selects by PID instead of guessing from the advertising name.
 
-## สิ่งที่ต้องยืนยันกับลำโพงจริง
+## Requires confirmation on physical hardware
 
-- PID/MID, firmware และ protocol generation ของเครื่อง
-- service UUID แบบเฉพาะรุ่น
-- ช่วง level ที่ UI อนุญาตจริง (model บอกเพียงชนิด byte/scope)
-- 7-band frequency/Q ที่ firmware รุ่นนั้นยอมรับ
-- bonding/authentication ที่ firmware บังคับใช้
-- ลำโพงใช้ EQ feature `0E02` หรือ Grip-style `0E7F`
+- Device PID/MID, firmware, and protocol generation
+- Model-specific service UUID
+- Actual level range permitted by the firmware UI
+- Seven-band frequency and Q values accepted by that firmware revision
+- Required bonding or authentication behavior
+- Whether the speaker uses EQ feature `0E02` or Grip-style `0E7F`
 
-## แหล่งหลักในผล decompile
+## Primary decompilation sources
 
 - `com/harman/sdk/setting/AppConfig.java`
 - `com/harman/sdk/command/BaseCommand.java`
@@ -191,4 +193,4 @@ Python รองรับผ่าน `set-grip` และ `set-auto`; คำส
 - `com/harman/sdk/protocol4/cmd/PortableControl.java`
 - `com/harman/sdk/protocol4/cmd/imp/DeviceFeature.java`
 
-ผล decompile ทั้งชุดอยู่ที่ `work/jadx/` และ XAPK ที่แยกแล้วอยู่ที่ `work/xapk/`
+Local decompilation output is stored under ignored `work/jadx/` and extracted XAPK content under ignored `work/xapk/`.

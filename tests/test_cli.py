@@ -1,7 +1,7 @@
 import pytest
 
-from jbl_pc import cli
-from jbl_pc.cli import main
+from vantadsp import cli
+from vantadsp.cli import main
 
 
 def test_cli_auto_is_dry_run(capsys):

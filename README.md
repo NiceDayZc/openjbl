@@ -1,231 +1,159 @@
-# JBL PC Control
+# VantaDSP
 
-เครื่องมือ Python สำหรับอ่าน/วิเคราะห์/ปรับ EQ ของลำโพงที่รองรับแอป JBL Portable จากคอมพิวเตอร์ สร้างจากการวิเคราะห์แบบ static ของ `JBL Portable 6.9.12` โดยไม่แก้ APK ต้นฉบับ
+VantaDSP is a safety-first Python toolkit and monochrome terminal interface for inspecting and controlling EQ on speakers supported by JBL Portable. It was built from static analysis of JBL Portable 6.9.12 and hardware validation, without modifying the original APK.
 
-> โครงการอิสระเพื่อการทำงานร่วมกันกับฮาร์ดแวร์ของผู้ใช้ ไม่เกี่ยวข้องหรือได้รับการรับรองจาก JBL/Harman เครื่องหมายการค้าเป็นของเจ้าของแต่ละราย ห้าม commit หรือแจก APK/firmware พร้อม repository นี้
+> Independent interoperability project. Not affiliated with or endorsed by JBL or Harman. All trademarks belong to their owners. Do not commit or redistribute APK or firmware files with this repository.
 
-รองรับ:
+## Highlights
 
-- BLE scan, ดู advertisement, manufacturer data และ UUID
-- แสดง GATT service/characteristic ทั้งหมด
-- BLE GATT ค่าเริ่มต้นของ Harman/JBL และ Bluetooth Classic SPP ผ่าน COM port
-- EQ mode, simple 3-band, advanced level EQ, parametric 7-band
-- Protocol 4 EQ สำหรับลำโพงรุ่นใหม่
-- raw packet capture/decode และส่ง packet แบบผู้เชี่ยวชาญ
-- dry-run เป็นค่าเริ่มต้นสำหรับทุกคำสั่งที่เปลี่ยนค่าลำโพง
-- เลือก wire protocol อัตโนมัติจาก PID ด้วย `set-auto`
+- Clean monochrome TUI with device discovery, model-aware EQ, live status, packet preview, and activity logs
+- BLE scan, advertisement/manufacturer-data inspection, and full GATT service discovery
+- Harman/JBL BLE GATT and Bluetooth Classic SPP transports
+- Legacy simple, advanced-level, and parametric EQ codecs
+- Protocol 4 `0E02` parametric and Grip-style `0E7F` quantized EQ codecs
+- PID-based automatic protocol routing across 37 catalogued models
+- 24 curated sound profiles mapped to each model's band layout and quantization
+- Read-only multi-generation probing, raw packet capture/decoding, and expert packet transmission
+- Dry-run by default, explicit write interlocks, target hashing, and JSONL audit logs
 
-## ติดตั้ง
+## Install
 
-เปิด PowerShell ในโฟลเดอร์นี้:
+Open PowerShell in the repository:
 
 ```powershell
 py -m venv .venv
-.\.venv\Scripts\Activate.ps1
+.venv\Scripts\Activate.ps1
 python -m pip install -e ".[dev]"
-pytest
 ```
 
-เปิด TUI:
+Launch the TUI:
 
 ```powershell
-jbltui
+vantatui
 ```
 
-TUI มี BLE device table, model/PID selector, read-only multi-generation probe, model-aware EQ read, packet preview, guarded apply และ JSONL audit log โดยการเขียนต้องเปิดสวิตช์และพิมพ์ `APPLY` ตรงตัว Audit log เก็บ hash ของ target แทน Bluetooth address
+The interface provides DEVICE, EQUALIZER, and ACTIVITY workspaces, plus a detailed SYSTEM / DEVICE / PROTOCOL / SAFETY status strip. Writes remain locked until enabled and confirmed with the exact text `APPLY`. Audit records store a hash of the target instead of its Bluetooth address.
 
-หน้าจอเป็น monochrome ขาวดำ พร้อม status strip แยก SYSTEM, DEVICE, PROTOCOL และ SAFETY, แสดง firmware/service/probe path, EQ curve แบบสด, reply count และ activity log แบบละเอียด เนื้อหาแบ่งเป็นสาม workspace tabs คือ DEVICE, EQUALIZER และ ACTIVITY จึงใช้งานได้ครบแม้ terminal ขนาด 80×24
+Runtime configuration and audit files are stored under `%LOCALAPPDATA%\vantadsp\` on Windows. Bluetooth must be enabled, and Windows must permit desktop apps to use Bluetooth and location. For SPP, pair the speaker first and locate its outgoing COM port in Device Manager.
 
-ไฟล์ config/audit อยู่ใต้ `%LOCALAPPDATA%\jbl-pc-control\` บน Windows และถูก `.gitignore` ไว้
+## Safe workflow
 
-Bluetooth ต้องเปิดอยู่ และ Windows ต้องอนุญาต Location/Bluetooth ให้โปรแกรมเดสก์ท็อป หากใช้ SPP ให้ pair ลำโพงใน Windows ก่อน แล้วดู COM port ใน Device Manager > Ports (COM & LPT)
-
-## ขั้นตอนที่ปลอดภัยที่สุด
-
-1. ปิดแอป JBL Portable บนโทรศัพท์ ไม่ให้แย่ง connection
-2. สแกนหาอุปกรณ์:
+Close JBL Portable on nearby phones first so it does not compete for the connection.
 
 ```powershell
-jblctl scan --seconds 10
+vantactl scan
+vantactl services --address DEVICE_FROM_SCAN
+vantactl probe --address DEVICE_FROM_SCAN
+vantactl models
+vantactl model --pid 20e3
 ```
 
-3. ดู service โดยแทนค่า address จากผล scan:
+Known default BLE values extracted from the APK:
+
+```text
+service  65786365-6C70-6F69-6E74-2E636F6D0000
+RX       65786365-6C70-6F69-6E74-2E636F6D0001
+TX       65786365-6C70-6F69-6E74-2E636F6D0002
+```
+
+Some products derive a service UUID from PID/MID. Use `services` to discover it, then pass `--service`, `--rx`, and `--tx` overrides if necessary.
+
+Read legacy and Protocol 4 EQ without changing the speaker:
 
 ```powershell
-jblctl services --address "ADDRESS"
+vantactl read-simple --address DEVICE
+vantactl read-advanced --address DEVICE
+vantactl read-p4 --address DEVICE
 ```
 
-หรือให้โปรแกรมอ่านทุก generation ที่รู้จักโดยไม่เปลี่ยนค่าใด ๆ:
+## EQ and sound profiles
+
+Mutating commands only print the encoded TX packet unless `--apply` is supplied. The recommended path is PID-aware routing:
 
 ```powershell
-jblctl probe --address "ADDRESS" --pid 20e3 --timeout 3
-jblctl get-auto --address "ADDRESS" --pid 20e3
+vantactl set-auto --pid 20e3 5 3 -2.5 -3 -2 -.5 1
+vantactl set-profile --pid 20e3 bass
+vantactl set-profile --pid 20e3 clear --address DEVICE --apply
+vantactl profiles
 ```
 
-ถ้ารู้ชื่อรุ่นหรือ PID ให้ดู transport, feature และเส้นทาง EQ ที่ฐานข้อมูลจาก APK ระบุ:
+`set-auto` chooses legacy simple, advanced-level, legacy parametric, Protocol 4 `0E02`, or Grip-style `0E7F` from the APK-derived model profile. It refuses products for which the APK does not declare EQ support.
+
+Included profiles cover Flat, Balanced, Bass Heavy, Deep Bass, Punch Bass, Warm, Loudness, Crystal Clear, Bright, Detail Monitor, Vocal, Podcast, Acoustic, Rock, Metal, Hip-Hop, EDM, Pop, Jazz, Classical, Cinema, Gaming, Outdoor, and Night. See [Sound profiles](docs/PROFILES.md).
+
+Examples for direct codec control:
 
 ```powershell
-jblctl models "Flip 7"
-jblctl models 204f
+# Legacy 3-band signed levels
+vantactl set-simple 4 1 -1
+
+# Legacy advanced signed levels
+vantactl set-advanced 3 2 1 0 -1 -2 -3
+
+# Legacy parametric bands: type,frequency,gain,q
+vantactl set-parametric `
+  "low-shelf,125,3,0.7" `
+  "peaking,250,2,2" `
+  "peaking,500,0,2" `
+  "peaking,1000,-1,2" `
+  "peaking,2000,0,2" `
+  "peaking,4000,1,2" `
+  "high-shelf,8000,2,0.7"
+
+# Charge 6 custom-band order: 125, 250, 500, 1k, 2k, 4k, 8kHz
+vantactl set-charge6 5 3 -2.5 -3 -2 -.5 1
 ```
 
-ค่า BLE ที่พบใน APK:
+Filter types are `low-shelf`, `peaking`, `high-shelf`, `low-pass`, and `high-pass`. Charge 6 custom band 1 supports -9..+6 dB with asymmetric negative quantization; bands 2-7 support -6..+6 dB in 0.5 dB steps, matching the APK UI mapping.
 
-- Service: `65786365-6c70-6f69-6e74-2e636f6d0000`
-- RX/notify: `...0001`
-- TX/write: `...0002`
-- CCCD: `00002902-0000-1000-8000-00805f9b34fb`
-- SPP: `00001101-0000-1000-8000-00805f9b34fb`
-
-บางรุ่นสร้าง service UUID ตาม PID จึงอาจไม่ใช้ service ค่าเริ่มต้น แต่ RX/TX มักเหมือนเดิม ให้ใช้ `services` หา UUID แล้วส่ง `--service`, `--rx`, `--tx` เพื่อ override
-
-4. อ่าน EQ รุ่นเดิม:
+## Capture, decode, and expert mode
 
 ```powershell
-jblctl get-mode --address "ADDRESS"
-jblctl get-firmware --address "ADDRESS"
-jblctl get-simple --address "ADDRESS"
-jblctl get-advanced --address "ADDRESS" --timeout 4
+vantactl capture --address DEVICE --seconds 15 --output capture.jsonl
+vantactl decode "AA9800"
+vantactl raw "AA6C00"
+vantactl raw "AA6C00" --address DEVICE --apply --i-understand-raw
 ```
 
-5. ถ้ารุ่นใหม่เป็น Protocol 4:
+Raw transmission requires both `--apply` and `--i-understand-raw`. No OTA, authentication bypass, factory reset, destructive command, or amplifier/limiter overclock path is implemented.
+
+For Bluetooth Classic SPP, use an outgoing COM port instead of a BLE address:
 
 ```powershell
-jblctl get-p4-eq --address "ADDRESS"
+vantactl raw "AA6C00" --port COM7 --apply --i-understand-raw
 ```
 
-## ปรับ EQ
-
-ทุกคำสั่งด้านล่างจะแสดง TX packet อย่างเดียวก่อน ถ้าตรวจแล้วถูกต้องจึงเพิ่ม `--apply`
-
-วิธีแนะนำสำหรับรุ่นที่อยู่ในฐานข้อมูล APK คือระบุ PID แล้วส่ง gain ตามจำนวนแถบของรุ่น โปรแกรมจะเลือก simple, advanced, legacy parametric, Protocol 4 `0E02` หรือ Grip-style `0E7F` ให้เอง:
-
-```powershell
-jblctl set-auto --pid 20e3 --address "ADDRESS" 5 3 -2.5 -3 -2 -0.5 1
-jblctl set-auto --pid 20e3 --address "ADDRESS" 5 3 -2.5 -3 -2 -0.5 1 --apply
-```
-
-โปรไฟล์เสียงสำเร็จรูปจะ map curve ให้ตรงจำนวนแถบ/ความถี่/step ของแต่ละ PID โดยอัตโนมัติ:
-
-```powershell
-jblctl profiles
-jblctl profiles --pid 20e3
-jblctl set-profile --pid 20e3 --address "ADDRESS" bass
-jblctl set-profile --pid 20e3 --address "ADDRESS" clear --apply
-```
-
-มี 24 profile เช่น Bass Heavy, Deep Bass, Punch Bass, Warm, Crystal Clear, Vocal, Podcast, Rock, Metal, Hip-Hop, EDM, Jazz, Classical, Cinema, Gaming, Outdoor และ Night รายละเอียดอยู่ใน [docs/PROFILES.md](docs/PROFILES.md)
-
-ดูรุ่นและ preset ที่ APK มีให้ด้วย `jblctl models` และ `jblctl presets --pid PID` คำสั่ง `set-auto` จะปฏิเสธ PID ที่ APK ไม่ประกาศ EQ แทนการเดา packet
-
-Simple 3-band (ค่าบน wire เป็น signed byte; ช่วงจริงขึ้นกับรุ่น):
-
-```powershell
-jblctl set-simple --address "ADDRESS" --bass 2 --mid 0 --treble 3
-jblctl set-simple --address "ADDRESS" --bass 2 --mid 0 --treble 3 --apply
-```
-
-Advanced แบบระดับ 7 แถบ:
-
-```powershell
-jblctl set-levels --address "ADDRESS" 0 1 2 3 2 1 0
-```
-
-Parametric แบบเดิม รูปแบบ band คือ `type,frequency,gain,q`:
-
-```powershell
-jblctl set-parametric --address "ADDRESS" `
-  --band low_shelf,125,1.5,0.707 `
-  --band peaking,250,0,1.0 `
-  --band peaking,500,-1,1.0 `
-  --band peaking,1000,0,1.0 `
-  --band peaking,2000,1,1.0 `
-  --band peaking,4000,0,1.0 `
-  --band high_shelf,8000,1.5,0.707
-```
-
-Protocol 4 ใช้ arguments ชุดเดียวกัน แต่เปลี่ยนคำสั่งเป็น `set-p4-parametric` และต้องมี 7 แถบพอดี
-
-สำหรับ Charge 6 PID `20E3` ใช้คำสั่งเฉพาะรุ่นได้ โดยเรียง gain เป็น 125, 250, 500, 1k, 2k, 4k, 8k Hz:
-
-```powershell
-jblctl set-charge6 --address "ADDRESS" 5 3 -2.5 -3 -2 -0.5 1
-jblctl set-charge6 --address "ADDRESS" 0 0 0 0 0 0 0 --apply
-```
-
-Band แรกใช้ช่วง -9..+6 dB (ฝั่งลบทีละ 0.75, ฝั่งบวกทีละ 0.5); band 2–7 ใช้ -6..+6 dB ทีละ 0.5 ตาม mapping ของ UI ใน APK
-
-ชนิด filter:
-
-- `low_shelf` = 0
-- `peaking` = 1
-- `high_shelf` = 2
-- `low_pass` = 3
-- `high_pass` = 4
-
-## จับและถอด packet
-
-```powershell
-jblctl listen --address "ADDRESS" --seconds 60 --log capture.txt
-jblctl decode "AA 62 01 01"
-```
-
-ส่ง raw packet ถูกล็อกสองชั้น:
-
-```powershell
-jblctl raw --address "ADDRESS" "AA 61 00"
-jblctl raw --address "ADDRESS" "..." --apply --i-understand
-```
-
-## Bluetooth Classic SPP
-
-เมื่อ Windows สร้าง outgoing COM port แล้ว ใช้ `--port` แทน `--address`:
-
-```powershell
-jblctl get-simple --port COM7
-jblctl set-simple --port COM7 --bass 1 --mid 0 --treble 1 --apply
-```
-
-baud rate ไม่มีผลกับ RFCOMM จริง แต่ pyserial ต้องรับค่า จึงใช้ 115200 เป็นค่าเริ่มต้น
-
-## ข้อจำกัดสำคัญ
-
-- APK รองรับลำโพงหลาย generation จึงไม่มี packet เดียวที่ถูกกับทุกรุ่น
-- Windows อาจแสดง BLE address เป็น device identifier แทน MAC; ให้ใช้ค่าจาก `scan`
-- ควรอ่านค่าปัจจุบันและเก็บ capture ก่อนเขียนเสมอ
-- ไม่ได้ทำ OTA, authentication bypass, factory reset หรือคำสั่งทำลายข้อมูล
-- การควบคุมเสียง A2DP/AVRCP ของ Windows (เล่น/หยุด/volume) เป็นคนละ protocol กับ EQ vendor command
-- หากอ่านได้แต่เขียนไม่ได้ ลำโพงอาจต้อง pair/bond, ต้องใช้ write-with-response อีกแบบ หรือใช้ Protocol 4
-
-รายละเอียด byte-level และหลักฐานจาก APK อยู่ใน [docs/PROTOCOL.md](docs/PROTOCOL.md)
-
-ตารางความครอบคลุมทุกรุ่นอยู่ใน [docs/SUPPORTED_MODELS.md](docs/SUPPORTED_MODELS.md) และผลยืนยัน Charge 6 เครื่องจริงอยู่ใน [docs/DEVICE_CHARGE6_20E3.md](docs/DEVICE_CHARGE6_20E3.md)
-
-## ใช้เป็น Python module
+## Python API
 
 ```python
-from jbl_pc.models import auto_eq_frames, auto_read_frames
-from jbl_pc.protocol import hex_bytes
+from vantadsp.protocol import build_simple_eq_set, parse_legacy_frame
 
-read_path, read_frames = auto_read_frames("20e3")
-write_path, write_frames = auto_eq_frames("20e3", [5, 3, -2.5, -3, -2, -0.5, 1])
-print(read_path, [hex_bytes(frame) for frame in read_frames])
-print(write_path, [hex_bytes(frame) for frame in write_frames])
+packet = build_simple_eq_set(bass=4, mid=1, treble=-1)
+frame = parse_legacy_frame(packet)
+print(packet.hex(), frame)
 ```
 
-builder ไม่ทำ Bluetooth I/O เอง จึงนำไปใช้ในโปรแกรมอื่นและทดสอบแบบ deterministic ได้ การส่งจริงอยู่ใน `jbl_pc.transport` และควรคง safety confirmation ของ application ชั้นบนไว้
+Protocol builders perform no Bluetooth I/O, so they are deterministic and reusable. Real transmission is isolated in `vantadsp.transport`; applications should retain an explicit safety confirmation layer.
 
-## QA และเตรียมขึ้น GitHub
+## Documentation
+
+- [Protocol reference](docs/PROTOCOL.md)
+- [Supported models](docs/SUPPORTED_MODELS.md)
+- [Hardware-confirmed Charge 6 profile](docs/DEVICE_CHARGE6_20E3.md)
+- [Sound profiles](docs/PROFILES.md)
+- [Security and QA audit](docs/AUDIT.md)
+
+## Quality assurance
 
 ```powershell
-pytest
-ruff check .
 ruff format --check .
-mypy src/jbl_pc
-bandit -q -c pyproject.toml -r src/jbl_pc
+ruff check .
+mypy src/vantadsp
+pytest
+bandit -q -c pyproject.toml -r src/vantadsp
 pip-audit .
 python -m build
 twine check dist/*
 ```
 
-GitHub Actions รัน Windows/Linux บน Python 3.10/3.12 พร้อม test, coverage, lint, typing, security และ package validation ไฟล์ XAPK/APK, `work/`, `tools/`, captures, local config และ audit log จะไม่ถูก commit ดูผล audit ปัจจุบันใน [docs/AUDIT.md](docs/AUDIT.md)
+GitHub Actions tests Windows and Linux on Python 3.10 and 3.12 with coverage, linting, typing, security, and package validation. APK/XAPK files, decompilation output, captures, local configuration, and audit logs are excluded from version control.

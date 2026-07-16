@@ -109,7 +109,10 @@ async def listen(args: argparse.Namespace) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="jblctl", description="JBL Portable PC protocol utility")
+    parser = argparse.ArgumentParser(
+        prog="vantactl",
+        description="VantaDSP - safe JBL Portable protocol and EQ control",
+    )
     sub = parser.add_subparsers(dest="command", required=True)
 
     p = sub.add_parser("scan", help="scan BLE advertisements")

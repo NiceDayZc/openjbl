@@ -1,7 +1,7 @@
 import pytest
 
-from jbl_pc.models import all_models, auto_eq_frames
-from jbl_pc.presets import PROFILES, get_profile, resolve_profile, sparkline
+from vantadsp.models import all_models, auto_eq_frames
+from vantadsp.presets import PROFILES, get_profile, resolve_profile, sparkline
 
 
 def test_profile_catalog_is_large_and_unique():

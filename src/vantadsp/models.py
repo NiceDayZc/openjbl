@@ -13,7 +13,7 @@ GRIP_STYLE_P4_PIDS = frozenset({"2132", "2168", "218a", "2185"})
 
 
 def all_models() -> list[dict[str, Any]]:
-    path = files("jbl_pc").joinpath("data/product_list_config.json")
+    path = files("vantadsp").joinpath("data/product_list_config.json")
     data = json.loads(path.read_text(encoding="utf-8"))
     return data["productList"]
 
@@ -64,7 +64,7 @@ def presets_for_pid(pid: str) -> list[dict[str, Any]]:
     config = model.get("eqConfig") or model.get("presetEqPath")
     if not config:
         return []
-    path = files("jbl_pc").joinpath(f"data/{config}")
+    path = files("vantadsp").joinpath(f"data/{config}")
     if not path.is_file():
         return []
     return json.loads(path.read_text(encoding="utf-8"))
