@@ -4,6 +4,8 @@ VantaDSP is a safety-first Python toolkit and monochrome terminal interface for 
 
 > Independent interoperability project. Not affiliated with or endorsed by JBL or Harman. All trademarks belong to their owners. Do not commit or redistribute APK or firmware files with this repository.
 
+![VantaDSP monochrome Bluetooth EQ control TUI](docs/assets/vantadsp-tui.png)
+
 ## Highlights
 
 - Clean monochrome TUI with device discovery, model-aware EQ, live status, packet preview, and activity logs
@@ -58,7 +60,7 @@ vantactl scan
 vantactl services --address DEVICE_FROM_SCAN
 vantactl probe --address DEVICE_FROM_SCAN
 vantactl models
-vantactl model --pid 20e3
+vantactl models 20e3
 ```
 
 Known default BLE values extracted from the APK:
@@ -74,9 +76,9 @@ Some products derive a service UUID from PID/MID. Use `services` to discover it,
 Read legacy and Protocol 4 EQ without changing the speaker:
 
 ```powershell
-vantactl read-simple --address DEVICE
-vantactl read-advanced --address DEVICE
-vantactl read-p4 --address DEVICE
+vantactl get-simple --address DEVICE
+vantactl get-advanced --address DEVICE
+vantactl get-p4-eq --address DEVICE
 ```
 
 ## EQ and sound profiles
@@ -98,10 +100,10 @@ Examples for direct codec control:
 
 ```powershell
 # Legacy 3-band signed levels
-vantactl set-simple 4 1 -1
+vantactl set-simple --bass 4 --mid 1 --treble -1
 
 # Legacy advanced signed levels
-vantactl set-advanced 3 2 1 0 -1 -2 -3
+vantactl set-levels 3 2 1 0 -1 -2 -3
 
 # Legacy parametric bands: type,frequency,gain,q
 vantactl set-parametric `
@@ -122,18 +124,18 @@ Filter types are `low-shelf`, `peaking`, `high-shelf`, `low-pass`, and `high-pas
 ## Capture, decode, and expert mode
 
 ```powershell
-vantactl capture --address DEVICE --seconds 15 --output capture.jsonl
+vantactl listen --address DEVICE --seconds 15 --log capture.log
 vantactl decode "AA9800"
 vantactl raw "AA6C00"
-vantactl raw "AA6C00" --address DEVICE --apply --i-understand-raw
+vantactl raw "AA6C00" --address DEVICE --apply --i-understand
 ```
 
-Raw transmission requires both `--apply` and `--i-understand-raw`. No OTA, authentication bypass, factory reset, destructive command, or amplifier/limiter overclock path is implemented.
+Raw transmission requires both `--apply` and `--i-understand`. No OTA, authentication bypass, factory reset, destructive command, or amplifier/limiter overclock path is implemented.
 
 For Bluetooth Classic SPP, use an outgoing COM port instead of a BLE address:
 
 ```powershell
-vantactl raw "AA6C00" --port COM7 --apply --i-understand-raw
+vantactl raw "AA6C00" --port COM7 --apply --i-understand
 ```
 
 ## Python API
