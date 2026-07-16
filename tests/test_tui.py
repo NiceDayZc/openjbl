@@ -44,6 +44,11 @@ async def test_tui_mounts_and_write_is_locked():
         assert app.query_one("#main-tabs").active == "eq-tab"
         app.apply_eq()
         assert app.query_one("#confirm", Input).value == ""
+        assert "WRITE BLOCKED" in str(app.query_one("#safety-guide", Static).render())
+        app.query_one("#guard", Switch).value = True
+        app.query_one("#confirm", Input).value = "APPLY"
+        await pilot.pause()
+        assert "READY TO APPLY" in str(app.query_one("#status-safety", Static).render())
 
 
 def test_tui_source_is_legacy_console_safe():

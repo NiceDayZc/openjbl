@@ -55,7 +55,13 @@ class VantaDSPApp(App[None]):
     .field-label { color: #999999; }
     Input, Select { background: #090909; color: #eeeeee; border: ascii #555555; }
     Input:focus, Select:focus { border: ascii #ffffff; }
-    SelectOverlay, Toast { border: ascii #ffffff; }
+    Select > SelectCurrent { border: ascii #555555; padding: 0 1; }
+    Select:focus > SelectCurrent { border: ascii #ffffff; }
+    SelectCurrent .arrow { display: none; }
+    Select > SelectOverlay { border: ascii #ffffff; }
+    Switch { border: ascii #555555; padding: 0 1; }
+    Switch:focus { border: ascii #ffffff; }
+    Toast { width: 42; max-width: 40%; padding: 0 1; margin-top: 0; border: ascii #ffffff; }
     #devices { height: 1fr; border: ascii #555555; background: #000000; }
     #profile-panel { height: 9; padding: 1; background: #090909; }
     #profile-row { height: 3; }
@@ -68,9 +74,9 @@ class VantaDSPApp(App[None]):
     .actions { height: 3; align-vertical: middle; }
     .actions Button { min-width: 18; margin-right: 1; background: #111111; color: #eeeeee; border: ascii #555555; }
     .actions Button:hover, .actions Button:focus { background: #eeeeee; color: #000000; border: ascii #ffffff; }
-    #apply { background: #eeeeee; color: #000000; text-style: bold; }
+    #apply { min-width: 22; background: #eeeeee; color: #000000; text-style: bold; }
     #guard { width: 10; margin-left: 1; }
-    #confirm { width: 13; }
+    #confirm { width: 18; }
     #log { height: 1fr; border: ascii #555555; background: #000000; color: #dddddd; }
     """
     BINDINGS: ClassVar = [
@@ -280,6 +286,14 @@ class VantaDSPApp(App[None]):
             self._load_profile(str(event.value))
 
     def on_input_changed(self, event: Input.Changed) -> None:
+        if event.input.id == "confirm":
+            armed = self.query_one("#guard", Switch).value
+            if armed and event.value == "APPLY":
+                self._status(safety="ARMED - READY TO APPLY")
+                self.query_one("#safety-guide", Static).update(
+                    "READY  Review the profile, then press APPLY TO SPEAKER. This performs a live hardware write."
+                )
+            return
         if event.input.id != "gains" or not event.value.strip():
             return
         try:
@@ -294,6 +308,11 @@ class VantaDSPApp(App[None]):
     def on_switch_changed(self, event: Switch.Changed) -> None:
         if event.switch.id == "guard":
             self._status(safety="ARMED - TYPE APPLY" if event.value else "WRITE LOCKED")
+            self.query_one("#safety-guide", Static).update(
+                "ARMED  Type APPLY in the confirmation field to continue."
+                if event.value
+                else "SAFE APPLY  Preview first, enable the lock, then type APPLY exactly."
+            )
 
     async def on_button_pressed(self, event: Button.Pressed) -> None:
         actions = {"scan": self.action_scan, "probe": self.action_probe, "read": self.action_read}
@@ -439,10 +458,8 @@ class VantaDSPApp(App[None]):
         if not guard or phrase != "APPLY":
             self._status(safety="BLOCKED - CHECK INTERLOCK")
             self.log_message("BLOCK   |  Enable WRITE INTERLOCK and type APPLY exactly.")
-            self.notify(
-                "Enable ALLOW HARDWARE WRITE and type APPLY exactly.",
-                title="Write blocked",
-                severity="warning",
+            self.query_one("#safety-guide", Static).update(
+                "WRITE BLOCKED  Enable ALLOW HARDWARE WRITE and type APPLY exactly. Nothing was sent."
             )
             return
         self.apply_worker()
