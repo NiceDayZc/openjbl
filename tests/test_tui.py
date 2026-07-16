@@ -4,6 +4,7 @@ import pytest
 from textual.widgets import DataTable, Input, Select, Static
 
 import vantadsp.tui as tui_module
+from vantadsp import protocol
 from vantadsp.config import Settings
 from vantadsp.tui import VantaDSPApp
 
@@ -50,3 +51,45 @@ def test_tui_source_is_legacy_console_safe():
     assert source.isascii()
     assert "border: tall" not in source
     assert "border: ascii" in source
+
+
+@pytest.mark.asyncio
+async def test_direct_apply_requires_ack_and_matching_readback(monkeypatch):
+    before_gains = [-0.75, -1, -1, 3, 4, 2, 0]
+    before_request = protocol.set_parametric_eq(
+        protocol.EQ_CATEGORIES["custom_c2"], protocol.charge6_bands(before_gains)
+    )
+    before_payload = protocol.LegacyFrame.decode(before_request, force_long=True).payload
+
+    class FakeTransport:
+        written_payload = None
+
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_args):
+            return None
+
+        async def transact(self, data, _timeout):
+            frame = protocol.LegacyFrame.decode(data)
+            if frame.command == protocol.SET_ADVANCED_EQ:
+                self.written_payload = frame.payload
+                return [protocol.LegacyFrame(protocol.RET_ADVANCED_EQ, frame.payload, long_length=True).encode()]
+            if frame.command == protocol.REQ_ADVANCED_EQ:
+                payload = self.written_payload or before_payload
+                return [protocol.LegacyFrame(protocol.RET_ADVANCED_EQ, payload, long_length=True).encode()]
+            raise AssertionError(frame.command)
+
+    monkeypatch.setattr(tui_module, "BleTransport", FakeTransport)
+    app = VantaDSPApp(Settings(last_address="device-id", last_pid="20e3"))
+    async with app.run_test(size=(100, 30)) as pilot:
+        app.query_one("#gains", Input).value = "0, 0, 0, 0, 0, 0, 0"
+        app.apply_eq()
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+        assert app.query_one("#main-tabs").active == "activity-tab"
+        assert "WRITE VERIFIED" in str(app.query_one("#status-system", Static).render())
+        assert "CHANGED + VERIFIED" in str(app.query_one("#status-protocol", Static).render())

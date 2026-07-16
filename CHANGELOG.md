@@ -11,6 +11,8 @@ All notable changes follow Keep a Changelog style. This project uses semantic ve
 - Added visible success, warning, and error notifications plus direct `1`/`2`/`3` workspace shortcuts.
 - Reduced nested framing and verified the interface at an 80x24 terminal size.
 - Added automatic JBL/PID selection from Harman company data, `DFFD`/`FDDF`/`FC69` service data, derived service UUIDs, unique names, and Windows paired-device metadata.
+- Replaced the TUI write interlock with direct apply while retaining model and gain validation.
+- Added pre-write state capture, write acknowledgement inspection, automatic read-back, per-band delta verification, transaction IDs, detailed Activity evidence, and explicit verified/mismatch/unverified outcomes.
 
 ## [0.2.1] - 2026-07-16
 

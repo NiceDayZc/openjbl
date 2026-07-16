@@ -17,6 +17,7 @@ VantaDSP is a safety-first Python toolkit and monochrome terminal interface for 
 - PID-based automatic protocol routing across 37 catalogued models
 - 24 curated sound profiles mapped to each model's band layout and quantization
 - Read-only multi-generation probing, raw packet capture/decoding, and expert packet transmission
+- Verified writes with protocol acknowledgement, automatic EQ read-back, per-band comparison, and detailed transaction logs
 - CLI dry-run by default, direct TUI apply, target hashing, and JSONL audit logs
 
 ## Install
@@ -47,7 +48,7 @@ Launch the TUI:
 vantatui
 ```
 
-The interface provides DEVICE, EQUALIZER, and ACTIVITY workspaces, plus a detailed SYSTEM / DEVICE / PROTOCOL status strip. `APPLY TO SPEAKER` writes the selected profile immediately after model and gain validation. Audit records store a hash of the target instead of its Bluetooth address.
+The interface provides DEVICE, EQUALIZER, and ACTIVITY workspaces, plus a detailed SYSTEM / DEVICE / PROTOCOL status strip. `APPLY TO SPEAKER` reads the state before writing, writes after model and gain validation, checks the acknowledgement, reads the EQ again, and reports `WRITE VERIFIED` only when the acknowledgement is accepted and every decoded band matches. It distinguishes `CHANGED + VERIFIED` from `ALREADY MATCHED + VERIFIED`. Activity opens automatically and records the transaction ID, route, target fingerprint, before/write/after TX/RX frames, decoded responses, requested and actual gains, per-band deltas, elapsed time, and failure stage. Audit records store a hash of the target instead of its Bluetooth address.
 
 Runtime configuration and audit files are stored under `%LOCALAPPDATA%\vantadsp\` on Windows. Bluetooth must be enabled, and Windows must permit desktop apps to use Bluetooth and location. For SPP, pair the speaker first and locate its outgoing COM port in Device Manager.
 

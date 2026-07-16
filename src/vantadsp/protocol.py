@@ -276,8 +276,14 @@ def parse_parametric_eq(payload: bytes, *, protocol4_layout: bool = False) -> di
     if len(payload) < 7:
         raise ValueError("parametric response is too short")
     active, category, count = payload[:3]
-    sample_rate = struct.unpack(">I", payload[3:7])[0]
-    offset = 18 if protocol4_layout else 7
+    if protocol4_layout:
+        if len(payload) < 19:
+            raise ValueError("Protocol 4 parametric response is too short")
+        sample_rate = struct.unpack(">I", payload[7:11])[0]
+        offset = 19
+    else:
+        sample_rate = struct.unpack(">I", payload[3:7])[0]
+        offset = 7
     bands = []
     for _ in range(count):
         if offset + 13 > len(payload):

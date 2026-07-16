@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import json
+import time
+import uuid
+from datetime import datetime, timezone
 from typing import Any, ClassVar
 
 from textual import work
@@ -22,13 +25,14 @@ from textual.widgets import (
     TabPane,
 )
 
-from .audit import append_audit
+from .audit import append_audit, target_fingerprint
 from .config import Settings
 from .models import all_models, auto_eq_frames, auto_read_frames, gain_count_for_pid, summarize_model
 from .presets import get_profile, profile_options, resolve_profile, sparkline
 from .probe import probe_ble
 from .protocol import describe_frame, hex_bytes
 from .transport import BleTransport, scan_ble
+from .verification import verify_eq_readback
 
 MODEL_OPTIONS = [(f"{model.get('deviceName')} / {model.get('pid')}", str(model.get("pid"))) for model in all_models()]
 
@@ -427,45 +431,164 @@ class VantaDSPApp(App[None]):
             self.notify(str(exc), title="Preview rejected", severity="warning")
 
     def apply_eq(self) -> None:
+        self._show_tab("activity-tab")
         self.apply_worker()
 
     @work(exclusive=True)
     async def apply_worker(self) -> None:
+        transaction_id = uuid.uuid4().hex[:8].upper()
+        started = time.perf_counter()
+        address = ""
+        pid = ""
+        path = "unknown"
+        gains: list[float] = []
+        frames: list[bytes] = []
+        write_replies: list[bytes] = []
+        read_frames: list[bytes] = []
+        precheck_replies: list[bytes] = []
+        read_replies: list[bytes] = []
+        frames_written = 0
         try:
             address, pid, gains = self._address(), self._pid(), self._gains()
             path, frames = auto_eq_frames(pid, gains)
+            read_path, read_frames = auto_read_frames(pid)
             self._save_context()
-            self._status(system="WRITING EQ...")
-            self.log_message(f"WRITE   |  {path}  |  profile={self._profile_key()}  |  gains={gains}")
-            replies: list[bytes] = []
+            target = target_fingerprint(address)
+            timestamp = datetime.now(timezone.utc).isoformat(timespec="milliseconds")
+            self._status(system=f"WRITE TX {transaction_id}", protocol=f"{path} | SENDING")
+            self.log_message(
+                f"\nTXN     |  {transaction_id}  |  BEGIN {timestamp}\n"
+                f"TARGET  |  hash={target}  |  PID={pid}  |  profile={self._profile_key()}\n"
+                f"ROUTE   |  write={path}  |  readback={read_path}\n"
+                f"REQUEST |  gains={gains}  |  frames={len(frames)}"
+            )
             async with BleTransport(
                 address,
                 service_uuid=self.settings.service_uuid,
                 rx_uuid=self.settings.rx_uuid,
                 tx_uuid=self.settings.tx_uuid,
             ) as transport:
-                for frame in frames:
-                    replies.extend(await transport.transact(frame, self.settings.timeout))
+                self.log_message("CONNECT |  BLE connected; notifications ready")
+                self._status(system=f"PRECHECK {transaction_id}", protocol=f"{read_path} | READING BEFORE")
+                for index, frame in enumerate(read_frames, 1):
+                    self.log_message(f"PRECHECK|  TX {index}/{len(read_frames)}  |  {hex_bytes(frame)}")
+                    replies = await transport.transact(frame, self.settings.timeout)
+                    precheck_replies.extend(replies)
+                    self.log_message(f"PRECHECK|  RX {index}/{len(read_frames)}  |  {len(replies)} frame(s)")
+                precheck = verify_eq_readback(gains, precheck_replies)
+                self.log_message(
+                    f"BEFORE  |  status={precheck.status}  |  actual={precheck.actual}  |  delta={precheck.deltas}"
+                )
+                self._status(system=f"WRITE TX {transaction_id}", protocol=f"{path} | SENDING")
+                ack_error = False
+                for index, frame in enumerate(frames, 1):
+                    self.log_message(f"WRITE   |  TX {index}/{len(frames)}  |  {hex_bytes(frame)}")
+                    replies = await transport.transact(frame, self.settings.timeout)
+                    frames_written += 1
+                    write_replies.extend(replies)
+                    self.log_message(f"WRITE   |  RX {index}/{len(frames)}  |  {len(replies)} frame(s)")
+                    for reply in replies:
+                        self.log_message(f"ACK RAW |  {hex_bytes(reply)}")
+                        try:
+                            decoded = describe_frame(reply)
+                            ack_error = ack_error or decoded.get("command") == 0xEE
+                            self.log_message("ACK DEC |  " + json.dumps(decoded, ensure_ascii=False))
+                        except ValueError as exc:
+                            self.log_message(f"ACK DEC |  undecodable: {exc}")
+                ack = "REJECTED" if ack_error else ("RECEIVED" if write_replies else "MISSING")
+                self._status(system=f"VERIFYING {transaction_id}", protocol=f"{path} | ACK {ack}")
+                self.log_message(f"ACK     |  {ack}  |  total={len(write_replies)} frame(s)")
+                for index, frame in enumerate(read_frames, 1):
+                    self.log_message(f"READBACK|  TX {index}/{len(read_frames)}  |  {hex_bytes(frame)}")
+                    replies = await transport.transact(frame, self.settings.timeout)
+                    read_replies.extend(replies)
+                    self.log_message(f"READBACK|  RX {index}/{len(read_frames)}  |  {len(replies)} frame(s)")
+                    for reply in replies:
+                        self.log_message(f"STATE   |  RAW {hex_bytes(reply)}")
+                        try:
+                            self.log_message("STATE   |  DEC " + json.dumps(describe_frame(reply), ensure_ascii=False))
+                        except ValueError as exc:
+                            self.log_message(f"STATE   |  undecodable: {exc}")
+            verification = verify_eq_readback(gains, read_replies)
+            changed = precheck.status == "mismatch" and verification.verified
+            elapsed_ms = round((time.perf_counter() - started) * 1000)
+            self.log_message(
+                f"VERIFY  |  {verification.status.upper()}  |  source={verification.source}\n"
+                f"EXPECT  |  {verification.expected}\n"
+                f"ACTUAL  |  {verification.actual}\n"
+                f"DELTA   |  {verification.deltas}\n"
+                f"RESULT  |  {verification.message}\n"
+                f"PROOF   |  ack={ack}  |  state_changed={changed}  |  before={precheck.status}\n"
+                f"TXN     |  {transaction_id}  |  END  |  {elapsed_ms} ms"
+            )
             append_audit(
                 "eq-apply",
                 address=address,
                 pid=pid,
                 applied=True,
                 details={
+                    "transaction_id": transaction_id,
                     "profile": self._profile_key(),
                     "path": path,
                     "gains": gains,
                     "tx": [hex_bytes(frame) for frame in frames],
-                    "rx": [hex_bytes(reply) for reply in replies],
+                    "write_rx": [hex_bytes(reply) for reply in write_replies],
+                    "ack": ack,
+                    "precheck_rx": [hex_bytes(reply) for reply in precheck_replies],
+                    "precheck": precheck.as_dict(),
+                    "readback_tx": [hex_bytes(frame) for frame in read_frames],
+                    "readback_rx": [hex_bytes(reply) for reply in read_replies],
+                    "verification": verification.as_dict(),
+                    "elapsed_ms": elapsed_ms,
                 },
             )
-            self._status(system="WRITE COMPLETE")
-            self.log_message(f"WRITE   |  Complete  |  {len(replies)} reply frame(s)  |  Audit record saved")
-            self.notify("EQ was written to the speaker.", title="Write complete")
-            for reply in replies:
-                self.log_message(json.dumps(describe_frame(reply), ensure_ascii=False, indent=2))
+            if verification.verified and ack == "RECEIVED":
+                outcome = "CHANGED + VERIFIED" if changed else "ALREADY MATCHED + VERIFIED"
+                self._status(system="WRITE VERIFIED", protocol=f"{path} | {outcome}")
+                self.notify(
+                    "Write response received; every EQ band matched read-back. "
+                    + ("The pre-write state was different." if changed else "The requested state already matched."),
+                    title="Write verified",
+                )
+            elif verification.verified:
+                self._status(system="STATE MATCH / ACK ISSUE", protocol=f"{path} | ACK {ack}")
+                self.notify(
+                    f"Read-back matches, but the write acknowledgement is {ack.lower()}.",
+                    title="Write not fully verified",
+                    severity="warning",
+                )
+            elif verification.status == "mismatch":
+                self._status(system="WRITE MISMATCH", protocol=f"{path} | READBACK DIFFERS")
+                self.notify(verification.message, title="Write verification failed", severity="error")
+            else:
+                self._status(system="WRITE UNVERIFIED", protocol=f"{path} | NO DECODABLE READBACK")
+                self.notify(verification.message, title="Write not verified", severity="warning")
         except Exception as exc:
             self._status(system="WRITE FAILED")
+            elapsed_ms = round((time.perf_counter() - started) * 1000)
+            self.log_message(
+                f"TXN     |  {transaction_id}  |  FAILED  |  frames_written={frames_written}/{len(frames)}  |  "
+                f"{type(exc).__name__}: {exc}  |  {elapsed_ms} ms"
+            )
+            if address:
+                append_audit(
+                    "eq-apply-failed",
+                    address=address,
+                    pid=pid or None,
+                    applied=frames_written > 0,
+                    details={
+                        "transaction_id": transaction_id,
+                        "path": path,
+                        "gains": gains,
+                        "frames_written": frames_written,
+                        "frame_count": len(frames),
+                        "write_rx": [hex_bytes(reply) for reply in write_replies],
+                        "precheck_rx": [hex_bytes(reply) for reply in precheck_replies],
+                        "readback_rx": [hex_bytes(reply) for reply in read_replies],
+                        "error": f"{type(exc).__name__}: {exc}",
+                        "elapsed_ms": elapsed_ms,
+                    },
+                )
             self._report_error("Apply", exc)
 
 
