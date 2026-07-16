@@ -7,8 +7,8 @@ Audited release candidate: `0.2.2`
 
 | Gate | Result |
 |---|---|
-| Unit/integration/headless TUI tests | 44 passed |
-| Full-package branch-aware coverage | 69% (minimum gate 65%) |
+| Unit/integration/headless TUI tests | 53 passed |
+| Full-package branch-aware coverage | 72% (minimum gate 65%) |
 | Ruff lint and formatting | pass |
 | mypy package type check | pass |
 | Bandit static security scan | pass; no findings after reviewed B105 filter-name false positive is configured globally |
@@ -17,6 +17,8 @@ Audited release candidate: `0.2.2`
 | Twine metadata/render check | pass |
 | Charge 6 read-only full probe | pass |
 | Charge 6 PID-routed no-op write/read-back | pass; response and read-back matched byte-for-byte |
+| Charge 6 controlled change/restore | pass; band 7 changed 0.0 -> +0.5 -> 0.0 with ACK and zero-delta read-back at both stages |
+| Protocol-aware verification | legacy parametric/levels/simple and Protocol 4 0E02/0E7F covered |
 
 The first environment-wide dependency scan found vulnerabilities in unrelated packages installed in the user's shared Python environment. A project-path audit was then run so the result represents this project's resolved dependency graph. CI runs in a clean environment and repeats that project audit.
 

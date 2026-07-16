@@ -2,6 +2,7 @@ import math
 
 import pytest
 
+from vantadsp import protocol
 from vantadsp.models import auto_eq_frames, find_models
 from vantadsp.protocol import (
     EQ_CATEGORIES,
@@ -63,6 +64,14 @@ def test_protocol4_query_vector():
 def test_protocol4_requires_seven_bands():
     with pytest.raises(ValueError):
         p4_set_parametric_eq(0xC2, [ParametricBand(1, 0, 1000, 0.707)])
+
+
+def test_protocol4_parametric_payload_roundtrip():
+    bands = [ParametricBand(1, float(index), 125.0 * (2**index), 0.7) for index in range(7)]
+    payload = protocol.p4_parametric_payload(EQ_CATEGORIES["custom_c2"], bands)
+    parsed = parse_parametric_eq(payload, protocol4_layout=True)
+    assert parsed["sample_rate"] == 48000
+    assert [band["gain"] for band in parsed["bands"]] == [float(index) for index in range(7)]
 
 
 def test_model_database_and_recommendation():

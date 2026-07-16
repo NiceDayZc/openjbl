@@ -1,6 +1,6 @@
 # Hardware-confirmed profile: JBL Charge 6
 
-Validated over Windows BLE on 2026-07-16 using read-only requests and a no-op write/read-back cycle.
+Validated over Windows BLE on 2026-07-16 using read-only requests, a no-op write/read-back cycle, and a controlled change/restore cycle.
 
 | Field | Confirmed value |
 |---|---|
@@ -46,6 +46,8 @@ Windows also registered service UUID `65786365-6C70-6F69-6E74-2E04FFE32001` on t
 The same values were sent once in a `97` frame. Firmware returned `99`; a subsequent `98` request reproduced every byte, confirming no net EQ change.
 
 `set-auto --pid 20e3` was also validated end to end with the same no-op values. The selector chose `legacy-parametric/0x97`, the `0x99` response matched the TX payload, and the next read-back matched byte for byte.
+
+The verification pipeline was then tested with an actual state transition: band 7 changed from `0.0` to `+0.5` dB, returned one write response, and read back at `+0.5` with zero delta across all seven bands. The original `0.0` value was restored immediately, returned one response, and a second read-back again matched all seven original values with zero delta.
 
 ## APK UI limits
 
