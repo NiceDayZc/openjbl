@@ -8,6 +8,7 @@ A whole-system adversarial audit raised 46 findings; 29 survived refutation. 0.3
 
 ### Security
 
+- **The audit log's device pseudonym is now salted.** It was an unsalted SHA-256 of the address, which hides nothing: a Bluetooth address is 48 bits, the vendor OUI is public, and the remaining 24 bits fall to a brute-force search in about two seconds of ordinary single-threaded Python -- measured, not estimated. A 32-byte per-install salt now makes `audit.jsonl` safe to attach to a bug report on its own. It is still a pseudonym and not anonymisation: `config.json` keeps the last address in plaintext because the tool has to reconnect to it, and SECURITY.md now says so instead of implying otherwise.
 - **The TUI no longer installs anything.** `auto_update` defaulted to true and ran `pip install` at launch against an unpinned, unhashed PyPI version with no prompt, so one compromise of one PyPI account meant code execution on every machine running OpenJBL -- while pip rewrote the live interpreter's site-packages under a process about to open a GATT link and write EQ. It now reports that a release exists; `openjbl update` installs when asked. The default is off entirely.
 - `install_version` validated a stripped copy of the version string and then passed the unstripped original to pip. It now validates exactly what it passes.
 
@@ -28,6 +29,14 @@ A whole-system adversarial audit raised 46 findings; 29 survived refutation. 0.3
 - **Both shelf bands went to hardware with Q=0.7 where the app sends 0.707** -- including on the extended-gain path. The band table is now read from the APK's own `custom_c2_eq.json` instead of restated in Python, which is how it drifted.
 - `openjbl set-auto --apply` and `set-profile --apply` now read the EQ back, compare it band by band, write an audit record, and exit non-zero on a rejected or unverified write. Only the TUI did that before; the CLI printed reply bytes and exited 0.
 - README's Python API example raised `ImportError`, its `set-parametric` example exited 2, its `decode` example was a byte short, it documented 24 of 87 profiles, and it told users to press a button that does not exist. Every offline example in the README is now executed by hand against the built package.
+
+### Documentation
+
+- Rewrote the README around what a reader needs first: the first runnable command moved from line 55 to line 19, and the 1066-character paragraph that covered the workspaces, the lock, the apply flow, the verification outcomes and the audit record in one breath is now a scannable safety list plus a section for what "verified" actually means. Fixed the screenshot, which pointed at a file the rename had missed.
+- `docs/PROFILES.md` is generated from the code and documents all 87 profiles; it had covered 24 and predated the LAB tier entirely.
+- `docs/PROTOCOL.md` now documents which reply answers which request, taken from each SDK command class's own `getResponseCommands()`. The advanced setters are answered by the `99` RET frame rather than a `DEV_ACK`, which is exactly the asymmetry that gets guessed wrong.
+- `docs/AUDIT.md` covers the current tree and the whole-system audit. It had been a 0.2.4 record with today's numbers pasted into it.
+- `docs/DEVICE_CHARGE6_20E3.md` records the unresolved shelf Q question: it read `0.7` off the hardware, the APK asset ships `0.707`, and the code now sends `0.707`. Which the firmware holds is unknown, and the doc says so rather than quietly disagreeing with the code.
 
 ### Added
 

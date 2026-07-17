@@ -44,7 +44,7 @@ Long frame, used by advanced EQ and some long responses:
 AA | command:1 | payload_length_be:2 | payload:N
 ```
 
-These EQ frames have no CRC. Many set acknowledgements use command `00` with payload `[original_command, status]`; status `00` means success.
+These EQ frames have no CRC.
 
 ## EQ command IDs
 
@@ -60,6 +60,46 @@ These EQ frames have no CRC. Many set acknowledgements use command `00` with pay
 | request | `98` | advanced EQ |
 | response | `99` | advanced EQ |
 | set | `97` | advanced EQ |
+
+## Which reply answers which request
+
+Nothing on the wire carries a correlation id, so a reply can only be matched to a
+request by the command pairing. Each SDK command class declares its own answer in
+`getResponseCommands()`, and they are not uniform -- guessing here is how a
+speaker's unsolicited push gets counted as a write acknowledgement.
+
+| Request | Answered by | Source |
+|---|---|---|
+| `41` REQ_VER | `42` REP_VER | `ReqVerCommand` |
+| `61` REQ_EQ_MODE | `62` REP_EQ_MODE | `ReqEQModeCommand` |
+| `6C` REQ_SIMPLE_EQ | `6D` RET_SIMPLE_EQ | `ReqSimpleEqCommand` |
+| `98` REQ_ADVANCE_EQ | `99` RET_ADVANCE_EQ | `ReqAdvancedEQCommand` |
+| **`97` SET_ADVANCE_EQ** | **`99` RET_ADVANCE_EQ** | `SetAdvancedEQCommand`, `SetAdvancedNewEQCommand` |
+| `63` SET_EQ_MODE | `00` DEV_ACK, payload `[0x63, status]` | `SetEQModeCommand.onReceive` |
+| `6E` SET_SIMPLE_EQ | `00` DEV_ACK payload `[0x6E, status]`, **or** a bare `6D` | `SetSimpleEqCommand.onReceive` |
+
+Note the asymmetry: the two advanced setters are acknowledged by the `99` **RET**
+frame, not by a `DEV_ACK`. A `00` acknowledgement echoes the command it answers in
+`payload[0]` and its status in `payload[1]`; status `00` means success. `EE`
+(`RET_UNSUPPORTED_CMD`) is a rejection and can answer anything.
+
+`64` NOTIFY_EQ_CHANGE is device-initiated. It arrives whenever the speaker feels
+like it, including between a write and its acknowledgement, and must never be
+read as a reply.
+
+### Protocol 4 replies
+
+Protocol 4 carries its command id at byte offset 2, and `CommandProcessor` reads
+it there. `SET_DEVICE_INFO_0002` responses are explicitly discarded by the app as
+"only have Status Code, so skipped" -- the data comes back in a
+`GET_DEVICE_INFO_0001` frame.
+
+| Command id | Meaning |
+|---:|---|
+| `0001` | GET_DEVICE_INFO -- carries data |
+| `0002` | SET_DEVICE_INFO -- status only |
+| `0003` | NOTIFICATION_TO_APP -- device-initiated, never a reply |
+| `0004` | NOTIFICATION_TO_DEVICE |
 
 ### Simple EQ
 

@@ -306,18 +306,18 @@ LAB_PROFILES = (
     ),
     SoundProfile(
         "lab-bass-delete",
-        "DANGER / Bass Delete",
+        "LAB / Bass Delete",
         "Extreme low-frequency reduction for isolation and enclosure tests",
         (-24, -18, -12, -6, 0, 3, 6),
-        ("danger", "cut", "lab"),
+        ("lab", "cut", "subtractive"),
         True,
     ),
     SoundProfile(
         "lab-dark-24",
-        "DANGER / Dark 24",
+        "LAB / Dark 24",
         "Extreme upper-frequency reduction with a gently elevated low end",
         (6, 4, 2, 0, -8, -18, -24),
-        ("danger", "dark", "lab"),
+        ("lab", "dark", "subtractive"),
         True,
     ),
     SoundProfile(

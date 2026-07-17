@@ -1,6 +1,6 @@
 # Model coverage from JBL Portable 6.9.12
 
-“Supported” means OpenJBL can build or parse packets for the path declared by the APK. It does not mean every firmware revision has been tested on hardware. Run `probe` first and always begin with a dry run.
+"Supported" means OpenJBL can build or parse packets for the path declared by the APK. It does not mean every firmware revision has been tested on hardware. Run `probe` first and always begin with a dry run.
 
 | PID | Model | APK transport | EQ path |
 |---|---|---|---|

@@ -49,6 +49,22 @@ The same values were sent once in a `97` frame. Firmware returned `99`; a subseq
 
 The verification pipeline was then tested with an actual state transition: band 7 changed from `0.0` to `+0.5` dB, returned one write response, and read back at `+0.5` with zero delta across all seven bands. The original `0.0` value was restored immediately, returned one response, and a second read-back again matched all seven original values with zero delta.
 
+### Unresolved: shelf Q, 0.7 or 0.707
+
+The Q values in the table above are what was read off the device and written down
+as `0.7`. The APK's own `custom_c2_eq.json` ships `0.707` for both shelves, and
+OpenJBL now sends `0.707`, on the reasoning that matching the app's bytes is the
+safer default when the two disagree.
+
+Which one the firmware actually holds is unknown. `0.707` as float32 is
+`0.7070000171661377`, so a raw readback would not print as `0.7` on its own --
+the recorded value was probably rounded when this table was written, but nobody
+checked, and the readback was not kept.
+
+It does not affect verification: `verify_eq_readback` compares gain only. Resolve
+it by reading the raw `99` payload off the hardware and comparing bytes 9-12 of
+band 1 against `struct.pack(">f", 0.707)` = `3F34FDF4`.
+
 ## APK UI limits
 
 - Custom band 1: -9..+6 dB; negative values use 0.75 dB steps, while zero and positive values use 0.5 dB steps.
