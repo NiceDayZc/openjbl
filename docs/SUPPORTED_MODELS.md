@@ -1,6 +1,6 @@
 # Model coverage from JBL Portable 6.9.12
 
-“Supported” means VantaDSP can build or parse packets for the path declared by the APK. It does not mean every firmware revision has been tested on hardware. Run `probe` first and always begin with a dry run.
+“Supported” means OpenJBL can build or parse packets for the path declared by the APK. It does not mean every firmware revision has been tested on hardware. Run `probe` first and always begin with a dry run.
 
 | PID | Model | APK transport | EQ path |
 |---|---|---|---|
@@ -44,7 +44,7 @@
 
 ## Automatic routing
 
-`vantactl set-auto --pid PID GAIN...` selects in this order:
+`openjbl set-auto --pid PID GAIN...` selects in this order:
 
 1. Grip, Go 5, and Essential SE Protocol 4 models: feature `0E7F`, with gain quantized through the APK table.
 2. Other Protocol 4 models: feature `0E02`, seven-band parametric.
@@ -52,4 +52,4 @@
 4. `EQ_BALANCE_SUPPORT`: legacy `0x6E` bass/mid/treble.
 5. `PRESET_EQ`: legacy `0x97` signed-byte levels.
 
-Some devices use a random, changing BLE address. Always use the latest result from `vantactl scan`; do not persist a BLE MAC as a permanent identity.
+Some devices use a random, changing BLE address. Always use the latest result from `openjbl scan`; do not persist a BLE MAC as a permanent identity.

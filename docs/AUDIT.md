@@ -59,6 +59,6 @@ The first environment-wide dependency scan found vulnerabilities in unrelated pa
 
 1. Inspect `git status` and confirm no APK, capture, address, local config, or generated reverse-engineering output is staged.
 2. Run every QA command from the README in a clean virtual environment.
-3. Verify version consistency between `pyproject.toml`, `vantadsp.__version__`, and changelog.
-4. Build from a clean tree and install the wheel into a new environment; smoke-test `vantactl --help` and `vantatui`.
+3. Verify version consistency between `pyproject.toml`, `openjbl.__version__`, and changelog.
+4. Build from a clean tree and install the wheel into a new environment; smoke-test `openjbl --help` and `openjbl-tui`.
 5. Tag a signed release and attach only the wheel/sdist, checksums, changelog, and sanitized documentation.

@@ -24,7 +24,7 @@ capture*.txt
 *.pcap
 *.pcapng
 audit*.jsonl
-.vantadsp/
+.openjbl/
 
 # Editors and OS
 .idea/

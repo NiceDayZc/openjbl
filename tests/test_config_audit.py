@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from vantadsp.audit import append_audit, target_fingerprint
-from vantadsp.config import Settings
+from openjbl.audit import append_audit, target_fingerprint
+from openjbl.config import Settings
 
 
 def test_settings_roundtrip_and_unknown_keys(tmp_path):

@@ -26,9 +26,49 @@ REQ_FIRMWARE_VERSION = 0x41
 RET_FIRMWARE_VERSION = 0x42
 
 DEV_ACK = 0x00
+# The device's error reply: command 0xEE, payload echoing the command it is
+# rejecting (probe.py reads it as "this command is unsupported").
+DEV_ERROR = 0xEE
 # RET 0x99 is listed by PacketFormat.LONG_BYTES_COMMAND. The related request
 # and set classes explicitly override data() with the same two-byte length.
 LONG_LENGTH_COMMANDS = frozenset({SET_ADVANCED_EQ, REQ_ADVANCED_EQ, RET_ADVANCED_EQ, 0x92, 0x96})
+
+# Each SDK command class declares its own getResponseCommands():
+#   SetAdvancedEQCommand / SetAdvancedNewEQCommand  SET_ADVANCE_EQ -> RET_ADVANCE_EQ
+#   SetEQModeCommand       SET_EQ_MODE  -> DEV_ACK        (onReceive:29)
+#   SetSimpleEqCommand     SET_SIMPLE_EQ-> DEV_ACK or RET_SIMPLE_EQ (onReceive:58)
+# Note the two advanced setters are acknowledged by the RET frame, not a DEV_ACK.
+LEGACY_REPLIES_FOR = {
+    REQ_FIRMWARE_VERSION: frozenset({RET_FIRMWARE_VERSION}),
+    REQ_EQ_MODE: frozenset({RET_EQ_MODE}),
+    REQ_SIMPLE_EQ: frozenset({RET_SIMPLE_EQ}),
+    REQ_ADVANCED_EQ: frozenset({RET_ADVANCED_EQ}),
+    SET_ADVANCED_EQ: frozenset({RET_ADVANCED_EQ}),
+    SET_EQ_MODE: frozenset({DEV_ACK}),
+    SET_SIMPLE_EQ: frozenset({DEV_ACK, RET_SIMPLE_EQ}),
+}
+# The speaker pushes these without being asked, so they must never be mistaken
+# for a reply. A held link with a permanent subscription receives them at any
+# time, including between a write and its acknowledgement.
+UNSOLICITED_COMMANDS = frozenset({NOTIFY_EQ_CHANGE})
+P4_HEADERS = (b"\x00\xdd", b"\x01\xdd")
+
+# Protocol 4 command ids, from HeaderCommandID.java:17-27.
+P4_GET_DEVICE_INFO = 0x0001
+P4_SET_DEVICE_INFO = 0x0002
+P4_NOTIFICATION_TO_APP = 0x0003
+P4_NOTIFICATION_TO_DEVICE = 0x0004
+# The Protocol 4 equivalents of NOTIFY_EQ_CHANGE: device-initiated, never a reply.
+P4_UNSOLICITED_COMMAND_IDS = frozenset({P4_NOTIFICATION_TO_APP, P4_NOTIFICATION_TO_DEVICE})
+# CommandProcessor.java:541-547 reads the command id at offset 2 and parses only
+# GET_DEVICE_INFO_0001, NOTIFICATION_TO_APP_0003, GET_DEVICE_ANALYTICS_DATA_0201
+# and OTA_NOTIFICATION. A SET_DEVICE_INFO_0002 response is discarded outright --
+# "only have Status Code, so skipped" -- so a set is answered with data by an
+# 0x0001 frame, and its own 0x0002 echo carries a status and nothing else.
+P4_REPLIES_FOR = {
+    P4_GET_DEVICE_INFO: frozenset({P4_GET_DEVICE_INFO}),
+    P4_SET_DEVICE_INFO: frozenset({P4_GET_DEVICE_INFO, P4_SET_DEVICE_INFO}),
+}
 
 EQ_CATEGORIES = {
     "balance": 0x00,
@@ -116,6 +156,11 @@ class LegacyStreamDecoder:
     def __init__(self) -> None:
         self._buffer = bytearray()
 
+    @property
+    def pending(self) -> bool:
+        """True while a partial frame is buffered awaiting its remaining bytes."""
+        return bool(self._buffer)
+
     def feed(self, data: bytes) -> list[LegacyFrame]:
         self._buffer.extend(data)
         frames: list[LegacyFrame] = []
@@ -141,6 +186,68 @@ class LegacyStreamDecoder:
             del self._buffer[:total]
             frames.append(LegacyFrame.decode(raw, force_long=is_long))
         return frames
+
+
+def p4_command_id(frame: bytes) -> int | None:
+    """The Protocol 4 command id at offset 2, or None if this is not a P4 frame."""
+    if len(frame) < 4 or frame[:2] not in P4_HEADERS:
+        return None
+    return int(struct.unpack("<H", frame[2:4])[0])
+
+
+def reply_matches(request: bytes, reply: bytes) -> bool:
+    """True when `reply` answers `request` rather than being an unsolicited push.
+
+    Nothing on the wire carries a correlation id, so a reply is matched by the
+    request/response command pairing. This is only sound because a link runs one
+    transaction at a time.
+    """
+    if len(request) < 2 or len(reply) < 2:
+        return False
+    if request[0] == IDENTIFIER and reply[0] == IDENTIFIER:
+        command = reply[1]
+        if command in UNSOLICITED_COMMANDS:
+            return False
+        if command == DEV_ERROR:
+            return True
+        expected = LEGACY_REPLIES_FOR.get(request[1])
+        if expected is None:
+            # An unrecognised request accepts any reply; being permissive here
+            # keeps probes of undocumented commands working.
+            return True
+        if command not in expected:
+            return False
+        if command != DEV_ACK:
+            return True
+        # A DEV_ACK echoes the command it acknowledges in payload[0] and its
+        # status in payload[1], so it can be told apart from an ACK for
+        # something else. SetEQModeCommand.onReceive checks exactly this.
+        try:
+            payload = LegacyFrame.decode(reply).payload
+        except ValueError:
+            return False
+        return len(payload) > 1 and payload[0] == request[1] and payload[1] == 0
+    request_id = p4_command_id(request)
+    if request_id is not None:
+        reply_id = p4_command_id(reply)
+        if reply_id is None or reply_id in P4_UNSOLICITED_COMMAND_IDS:
+            return False
+        expected = P4_REPLIES_FOR.get(request_id)
+        return True if expected is None else reply_id in expected
+    return False
+
+
+def reply_completes(request: bytes, reply: bytes) -> bool:
+    """Whether `reply` ends the exchange, or is only an interim status.
+
+    A Protocol 4 SET_DEVICE_INFO_0002 response carries a status code and no data
+    -- CommandProcessor.java:542-544 discards it outright -- so accepting it as
+    the answer would end the wait before the GET_DEVICE_INFO_0001 frame that
+    actually carries the data ever arrives.
+    """
+    if not reply_matches(request, reply):
+        return False
+    return not (p4_command_id(request) == P4_SET_DEVICE_INFO and p4_command_id(reply) == P4_SET_DEVICE_INFO)
 
 
 def request_eq_mode() -> bytes:
@@ -263,6 +370,19 @@ def charge6_bands(gains: Sequence[float]) -> list[ParametricBand]:
         value = float(value)
         if not -6.0 <= value <= 6.0 or abs(value * 2 - round(value * 2)) > 1e-6:
             raise ValueError("Charge 6 bands 2..7 must be -6..+6 dB in 0.5 dB steps")
+    frequencies = (125.0, 250.0, 500.0, 1000.0, 2000.0, 4000.0, 8000.0)
+    kinds = (0, 1, 1, 1, 1, 1, 2)
+    q_values = (0.7, 2.0, 2.0, 2.0, 2.0, 2.0, 0.7)
+    return [
+        ParametricBand(kind, float(gain), frequency, q)
+        for kind, gain, frequency, q in zip(kinds, gains, frequencies, q_values, strict=True)
+    ]
+
+
+def charge6_extended_bands(gains: Sequence[float]) -> list[ParametricBand]:
+    """Build the confirmed Charge 6 band shape with expert gains up to +/-24 dB."""
+    if len(gains) != 7:
+        raise ValueError("Charge 6 requires exactly 7 gains")
     frequencies = (125.0, 250.0, 500.0, 1000.0, 2000.0, 4000.0, 8000.0)
     kinds = (0, 1, 1, 1, 1, 1, 2)
     q_values = (0.7, 2.0, 2.0, 2.0, 2.0, 2.0, 0.7)

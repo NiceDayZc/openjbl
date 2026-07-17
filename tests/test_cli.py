@@ -1,7 +1,7 @@
 import pytest
 
-from vantadsp import cli
-from vantadsp.cli import main
+from openjbl import cli
+from openjbl.cli import main
 
 
 def test_cli_auto_is_dry_run(capsys):
@@ -34,4 +34,13 @@ def test_cli_profile_is_model_aware_and_dry_run(capsys):
     output = capsys.readouterr().out
     assert "Profile: bass" in output
     assert "Gains: 6 4 1 -1 -1 0 1" in output
+    assert "DRY-RUN" in output
+
+
+def test_cli_lab_profile_requires_explicit_unlock(capsys):
+    with pytest.raises(SystemExit, match="allow-extended"):
+        main(["set-profile", "--pid", "20e3", "lab-test-8k"])
+    main(["set-profile", "--pid", "20e3", "lab-test-8k", "--allow-extended"])
+    output = capsys.readouterr().out
+    assert "Gains: 0 0 0 0 0 0 24" in output
     assert "DRY-RUN" in output

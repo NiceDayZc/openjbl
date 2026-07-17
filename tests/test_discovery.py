@@ -1,4 +1,4 @@
-from vantadsp.discovery import _windows_jbl_row, detect_jbl_device
+from openjbl.discovery import _windows_jbl_row, detect_jbl_device
 
 
 def test_detects_pid_from_harman_manufacturer_data():

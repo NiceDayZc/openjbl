@@ -1,6 +1,6 @@
 import subprocess
 
-from vantadsp import updater
+from openjbl import updater
 
 
 def test_check_for_update_detects_newer_version(monkeypatch):
@@ -39,7 +39,7 @@ def test_install_version_uses_current_interpreter_and_fixed_project(monkeypatch)
     result = updater.install_version("0.2.3")
     assert result.installed
     assert captured["command"][0] == updater.sys.executable
-    assert captured["command"][-1] == "vantadsp==0.2.3"
+    assert captured["command"][-1] == "openjbl==0.2.3"
     assert captured["kwargs"]["check"] is False
 
 

@@ -13,7 +13,7 @@ GRIP_STYLE_P4_PIDS = frozenset({"2132", "2168", "218a", "2185"})
 
 
 def all_models() -> list[dict[str, Any]]:
-    path = files("vantadsp").joinpath("data/product_list_config.json")
+    path = files("openjbl").joinpath("data/product_list_config.json")
     data = json.loads(path.read_text(encoding="utf-8"))
     return data["productList"]
 
@@ -64,7 +64,7 @@ def presets_for_pid(pid: str) -> list[dict[str, Any]]:
     config = model.get("eqConfig") or model.get("presetEqPath")
     if not config:
         return []
-    path = files("vantadsp").joinpath(f"data/{config}")
+    path = files("openjbl").joinpath(f"data/{config}")
     if not path.is_file():
         return []
     return json.loads(path.read_text(encoding="utf-8"))
@@ -108,13 +108,15 @@ def _model_band_shape(pid: str, gains: list[float]) -> list[ParametricBand]:
     return bands
 
 
-def auto_eq_frames(pid: str, gains: list[float]) -> tuple[str, list[bytes]]:
+def auto_eq_frames(pid: str, gains: list[float], *, allow_extended: bool = False) -> tuple[str, list[bytes]]:
     """Select the APK-declared EQ wire format for a model PID."""
     model = get_model(pid)
     normalized_pid = str(model.get("pid", "")).lower()
     features = set(model.get("features", []))
 
     if "PROTOCOL_4" in features and normalized_pid in GRIP_STYLE_P4_PIDS:
+        if allow_extended:
+            raise ValueError("Grip-style table EQ does not support extended float gains")
         return "protocol4-grip-quantized/0E7F", protocol.p4_set_grip_eq(EQ_CATEGORIES["custom_c2"], gains)
     if "PROTOCOL_4" in features:
         bands = _model_band_shape(pid, gains)
@@ -122,9 +124,14 @@ def auto_eq_frames(pid: str, gains: list[float]) -> tuple[str, list[bytes]]:
             raise ValueError("Protocol 4 parametric EQ requires the model's 7 gains")
         return "protocol4-parametric/0E02", protocol.p4_set_parametric_eq(EQ_CATEGORIES["custom_c2"], bands)
     if "7_BANDS_EQ" in features:
-        bands = protocol.charge6_bands(gains) if normalized_pid == "20e3" else _model_band_shape(pid, gains)
+        if normalized_pid == "20e3":
+            bands = protocol.charge6_extended_bands(gains) if allow_extended else protocol.charge6_bands(gains)
+        else:
+            bands = _model_band_shape(pid, gains)
         return "legacy-parametric/0x97", [protocol.set_parametric_eq(EQ_CATEGORIES["custom_c2"], bands)]
     if "EQ_BALANCE_SUPPORT" in features:
+        if allow_extended:
+            raise ValueError("legacy simple EQ does not support extended float gains")
         if len(gains) != 3:
             raise ValueError(f"PID {pid} uses 3 gains: bass mid treble")
         ints = [int(value) for value in gains]
@@ -132,6 +139,8 @@ def auto_eq_frames(pid: str, gains: list[float]) -> tuple[str, list[bytes]]:
             raise ValueError("legacy 3-band EQ accepts integer wire levels")
         return "legacy-simple/0x6E", [protocol.set_simple_eq(EQ_CATEGORIES["custom"], *ints)]
     if "PRESET_EQ" in features:
+        if allow_extended:
+            raise ValueError("legacy level EQ does not support extended float gains")
         expected = len(presets_for_pid(pid)[0].get("params", [])) if presets_for_pid(pid) else 5
         if len(gains) != expected:
             raise ValueError(f"PID {pid} expects {expected} level values")

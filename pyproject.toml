@@ -3,9 +3,9 @@ requires = ["setuptools>=83", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "vantadsp"
-version = "0.2.4"
-description = "VantaDSP: safe JBL Portable Bluetooth protocol, EQ, CLI, and TUI toolkit"
+name = "openjbl"
+version = "0.2.5"
+description = "OpenJBL: safe JBL Portable Bluetooth protocol, EQ, CLI, and TUI toolkit"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
@@ -27,9 +27,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/NiceDayZc/vantadsp"
-Repository = "https://github.com/NiceDayZc/vantadsp.git"
-Issues = "https://github.com/NiceDayZc/vantadsp/issues"
+Homepage = "https://github.com/NiceDayZc/openjbl"
+Repository = "https://github.com/NiceDayZc/openjbl.git"
+Issues = "https://github.com/NiceDayZc/openjbl/issues"
 
 [project.optional-dependencies]
 dev = [
@@ -46,22 +46,22 @@ dev = [
 ]
 
 [project.scripts]
-vantactl = "vantadsp.cli:main"
-vantatui = "vantadsp.tui:main"
+openjbl = "openjbl.cli:main"
+openjbl-tui = "openjbl.tui:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-vantadsp = ["data/*.json", "py.typed"]
+openjbl = ["data/*.json", "py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--strict-markers --cov=vantadsp --cov-report=term-missing"
+addopts = "--strict-markers --cov=openjbl --cov-report=term-missing"
 
 [tool.coverage.run]
 branch = true
-source = ["vantadsp"]
+source = ["openjbl"]
 
 [tool.coverage.report]
 fail_under = 65

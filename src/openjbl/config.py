@@ -13,7 +13,7 @@ from .transport import RX_UUID, SERVICE_UUID, TX_UUID
 
 def default_state_dir() -> Path:
     base = os.environ.get("LOCALAPPDATA")
-    return (Path(base) / "vantadsp") if base else (Path.cwd() / ".vantadsp")
+    return (Path(base) / "openjbl") if base else (Path.cwd() / ".openjbl")
 
 
 @dataclass

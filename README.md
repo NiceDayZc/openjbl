@@ -1,10 +1,10 @@
-# VantaDSP
+# OpenJBL
 
-VantaDSP is a safety-first Python toolkit and monochrome terminal interface for inspecting and controlling EQ on speakers supported by JBL Portable. It was built from static analysis of JBL Portable 6.9.12 and hardware validation, without modifying the original APK.
+OpenJBL is a safety-first Python toolkit and monochrome terminal interface for inspecting and controlling EQ on speakers supported by JBL Portable. It was built from static analysis of JBL Portable 6.9.12 and hardware validation, without modifying the original APK.
 
 > Independent interoperability project. Not affiliated with or endorsed by JBL or Harman. All trademarks belong to their owners. Do not commit or redistribute APK or firmware files with this repository.
 
-![VantaDSP monochrome Bluetooth EQ control TUI](docs/assets/vantadsp-tui.png)
+![OpenJBL monochrome Bluetooth EQ control TUI](docs/assets/openjbl-tui.png)
 
 ## Highlights
 
@@ -25,14 +25,14 @@ VantaDSP is a safety-first Python toolkit and monochrome terminal interface for 
 Install the latest release from PyPI:
 
 ```powershell
-python -m pip install vantadsp
+python -m pip install openjbl
 ```
 
-PyPI installations check for updates in the background when `vantatui` starts. A newer release is installed with the same Python interpreter, and Activity reports that a restart is required. Editable development installs are never overwritten automatically. Manual commands are also available:
+PyPI installations check for updates in the background when `openjbl-tui` starts. A newer release is installed with the same Python interpreter, and Activity reports that a restart is required. Editable development installs are never overwritten automatically. Manual commands are also available:
 
 ```powershell
-vantactl check-update
-vantactl update
+openjbl check-update
+openjbl update
 ```
 
 To install from a cloned repository instead:
@@ -52,24 +52,24 @@ python -m pip install -e ".[dev]"
 Launch the TUI:
 
 ```powershell
-vantatui
+openjbl-tui
 ```
 
 The interface provides DEVICE, EQUALIZER, and ACTIVITY workspaces, plus a detailed SYSTEM / DEVICE / PROTOCOL status strip. EQ remains locked until `CONNECT + VERIFY` establishes a live BLE connection and receives a supported EQ response; cached Windows pairing metadata never unlocks it. Changing the address/model or encountering a connection failure locks it again. `APPLY TO SPEAKER` reads the state before writing, writes after model and gain validation, checks the acknowledgement, reads the EQ again, and reports `WRITE VERIFIED` only when the acknowledgement is accepted and every decoded band matches. It distinguishes `CHANGED + VERIFIED` from `ALREADY MATCHED + VERIFIED`. Activity opens automatically and records the transaction ID, route, target fingerprint, before/write/after TX/RX frames, decoded responses, requested and actual gains, per-band deltas, elapsed time, and failure stage. Audit records store a hash of the target instead of its Bluetooth address.
 
-Runtime configuration and audit files are stored under `%LOCALAPPDATA%\vantadsp\` on Windows. Bluetooth must be enabled, and Windows must permit desktop apps to use Bluetooth and location. For SPP, pair the speaker first and locate its outgoing COM port in Device Manager.
+Runtime configuration and audit files are stored under `%LOCALAPPDATA%\openjbl\` on Windows. Bluetooth must be enabled, and Windows must permit desktop apps to use Bluetooth and location. For SPP, pair the speaker first and locate its outgoing COM port in Device Manager.
 
 ## Safe workflow
 
 Close JBL Portable on nearby phones first so it does not compete for the connection.
 
 ```powershell
-vantactl scan
-vantactl services --address DEVICE_FROM_SCAN
-vantactl probe --address DEVICE_FROM_SCAN
-vantactl models
-vantactl models 20e3
-vantactl check-update
+openjbl scan
+openjbl services --address DEVICE_FROM_SCAN
+openjbl probe --address DEVICE_FROM_SCAN
+openjbl models
+openjbl models 20e3
+openjbl check-update
 ```
 
 Known default BLE values extracted from the APK:
@@ -85,9 +85,9 @@ Some products derive a service UUID from PID/MID. Use `services` to discover it,
 Read legacy and Protocol 4 EQ without changing the speaker:
 
 ```powershell
-vantactl get-simple --address DEVICE
-vantactl get-advanced --address DEVICE
-vantactl get-p4-eq --address DEVICE
+openjbl get-simple --address DEVICE
+openjbl get-advanced --address DEVICE
+openjbl get-p4-eq --address DEVICE
 ```
 
 ## EQ and sound profiles
@@ -95,10 +95,10 @@ vantactl get-p4-eq --address DEVICE
 Mutating commands only print the encoded TX packet unless `--apply` is supplied. The recommended path is PID-aware routing:
 
 ```powershell
-vantactl set-auto --pid 20e3 5 3 -2.5 -3 -2 -.5 1
-vantactl set-profile --pid 20e3 bass
-vantactl set-profile --pid 20e3 clear --address DEVICE --apply
-vantactl profiles
+openjbl set-auto --pid 20e3 5 3 -2.5 -3 -2 -.5 1
+openjbl set-profile --pid 20e3 bass
+openjbl set-profile --pid 20e3 clear --address DEVICE --apply
+openjbl profiles
 ```
 
 `set-auto` chooses legacy simple, advanced-level, legacy parametric, Protocol 4 `0E02`, or Grip-style `0E7F` from the APK-derived model profile. It refuses products for which the APK does not declare EQ support.
@@ -109,13 +109,13 @@ Examples for direct codec control:
 
 ```powershell
 # Legacy 3-band signed levels
-vantactl set-simple --bass 4 --mid 1 --treble -1
+openjbl set-simple --bass 4 --mid 1 --treble -1
 
 # Legacy advanced signed levels
-vantactl set-levels 3 2 1 0 -1 -2 -3
+openjbl set-levels 3 2 1 0 -1 -2 -3
 
 # Legacy parametric bands: type,frequency,gain,q
-vantactl set-parametric `
+openjbl set-parametric `
   "low-shelf,125,3,0.7" `
   "peaking,250,2,2" `
   "peaking,500,0,2" `
@@ -125,7 +125,7 @@ vantactl set-parametric `
   "high-shelf,8000,2,0.7"
 
 # Charge 6 custom-band order: 125, 250, 500, 1k, 2k, 4k, 8kHz
-vantactl set-charge6 5 3 -2.5 -3 -2 -.5 1
+openjbl set-charge6 5 3 -2.5 -3 -2 -.5 1
 ```
 
 Filter types are `low-shelf`, `peaking`, `high-shelf`, `low-pass`, and `high-pass`. Charge 6 custom band 1 supports -9..+6 dB with asymmetric negative quantization; bands 2-7 support -6..+6 dB in 0.5 dB steps, matching the APK UI mapping.
@@ -133,10 +133,10 @@ Filter types are `low-shelf`, `peaking`, `high-shelf`, `low-pass`, and `high-pas
 ## Capture, decode, and expert mode
 
 ```powershell
-vantactl listen --address DEVICE --seconds 15 --log capture.log
-vantactl decode "AA9800"
-vantactl raw "AA6C00"
-vantactl raw "AA6C00" --address DEVICE --apply --i-understand
+openjbl listen --address DEVICE --seconds 15 --log capture.log
+openjbl decode "AA9800"
+openjbl raw "AA6C00"
+openjbl raw "AA6C00" --address DEVICE --apply --i-understand
 ```
 
 Raw transmission requires both `--apply` and `--i-understand`. No OTA, authentication bypass, factory reset, destructive command, or amplifier/limiter overclock path is implemented.
@@ -144,20 +144,20 @@ Raw transmission requires both `--apply` and `--i-understand`. No OTA, authentic
 For Bluetooth Classic SPP, use an outgoing COM port instead of a BLE address:
 
 ```powershell
-vantactl raw "AA6C00" --port COM7 --apply --i-understand
+openjbl raw "AA6C00" --port COM7 --apply --i-understand
 ```
 
 ## Python API
 
 ```python
-from vantadsp.protocol import build_simple_eq_set, parse_legacy_frame
+from openjbl.protocol import build_simple_eq_set, parse_legacy_frame
 
 packet = build_simple_eq_set(bass=4, mid=1, treble=-1)
 frame = parse_legacy_frame(packet)
 print(packet.hex(), frame)
 ```
 
-Protocol builders perform no Bluetooth I/O, so they are deterministic and reusable. Real transmission is isolated in `vantadsp.transport`; applications should retain an explicit safety confirmation layer.
+Protocol builders perform no Bluetooth I/O, so they are deterministic and reusable. Real transmission is isolated in `openjbl.transport`; applications should retain an explicit safety confirmation layer.
 
 ## Documentation
 
@@ -172,9 +172,9 @@ Protocol builders perform no Bluetooth I/O, so they are deterministic and reusab
 ```powershell
 ruff format --check .
 ruff check .
-mypy src/vantadsp
+mypy src/openjbl
 pytest
-bandit -q -c pyproject.toml -r src/vantadsp
+bandit -q -c pyproject.toml -r src/openjbl
 pip-audit .
 python -m build
 twine check dist/*

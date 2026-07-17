@@ -8,12 +8,14 @@ from contextlib import suppress
 from pathlib import Path
 
 from . import protocol
+from .connection import ConnectionManager
 from .models import auto_eq_frames, auto_read_frames, find_models, get_model, preset_for_pid, presets_for_pid
-from .presets import PROFILES, resolve_profile
+from .presets import ALL_PROFILES, curve_from_model_gains, curve_summary, get_profile, resolve_curve, resolve_profile
 from .probe import probe_ble
 from .protocol import EQ_CATEGORIES, FILTER_TYPES, ParametricBand, describe_frame, hex_bytes, parse_hex
-from .transport import RX_UUID, SERVICE_UUID, TX_UUID, BleTransport, SerialTransport, scan_ble
+from .transport import RX_UUID, SERVICE_UUID, TX_UUID, SerialTransport, scan_ble
 from .updater import check_for_update_safe, update_now
+from .userprofiles import delete_user_profile, load_user_profiles, save_user_profile, user_profiles_path
 
 
 def dump(value: object) -> None:
@@ -52,11 +54,30 @@ def add_connection(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--timeout", type=float, default=2.0)
 
 
-async def send_ble(args: argparse.Namespace, data: bytes) -> list[bytes]:
+def _manager(args: argparse.Namespace) -> ConnectionManager:
     if not args.address:
         raise SystemExit("specify --address for BLE or --port for Classic SPP")
-    async with BleTransport(args.address, service_uuid=args.service, rx_uuid=args.rx, tx_uuid=args.tx) as transport:
-        return await transport.transact(data, args.timeout)
+    return ConnectionManager(service_uuid=args.service, rx_uuid=args.rx, tx_uuid=args.tx, on_event=print)
+
+
+async def send_ble(args: argparse.Namespace, frames: list[bytes]) -> list[bytes]:
+    """Send every frame over one link, the way the Android app does.
+
+    Reconnecting between the frames of a single EQ write is what made multi-frame
+    writes slow and left a partial write behind when the link blipped.
+    """
+    manager = _manager(args)
+    link = await manager.acquire(args.address)
+    replies: list[bytes] = []
+    try:
+        for frame in frames:
+            transaction = await link.transact(frame, args.timeout)
+            replies.extend(transaction.replies)
+            if transaction.attempts > 1 or transaction.reconnects:
+                print(f"NOTE: delivered after {transaction.attempts} attempt(s), {transaction.reconnects} reconnect(s)")
+    finally:
+        await manager.release(args.address)
+    return replies
 
 
 def send(args: argparse.Namespace, frames: list[bytes]) -> None:
@@ -70,9 +91,7 @@ def send(args: argparse.Namespace, frames: list[bytes]) -> None:
         transport = SerialTransport(args.port, timeout=args.timeout)
         replies = [transport.transact(frame) for frame in frames]
     else:
-        replies = []
-        for frame in frames:
-            replies.extend(asyncio.run(send_ble(args, frame)))
+        replies = asyncio.run(send_ble(args, frames))
     for reply in replies:
         if not reply:
             print("RX: <timeout/no data>")
@@ -83,36 +102,45 @@ def send(args: argparse.Namespace, frames: list[bytes]) -> None:
 
 
 async def services(args: argparse.Namespace) -> None:
-    if not args.address:
-        raise SystemExit("services requires --address")
-    async with BleTransport(args.address, service_uuid=args.service, rx_uuid=args.rx, tx_uuid=args.tx) as transport:
-        dump(await transport.services())
+    manager = _manager(args)
+    link = await manager.acquire(args.address)
+    try:
+        dump(await link.services())
+    finally:
+        await manager.release(args.address)
 
 
 async def listen(args: argparse.Namespace) -> None:
-    if not args.address:
-        raise SystemExit("listen requires --address")
+    """Watch the speaker's unsolicited pushes over a held link.
+
+    The link stays subscribed for the whole window and reconnects underneath us
+    if it drops, so a blip no longer ends the capture.
+    """
+    manager = _manager(args)
     log = Path(args.log) if args.log else None
 
-    def received(data: bytes) -> None:
-        line = f"{time.time():.3f} RX {data.hex()}"
+    def record(line: str) -> None:
         print(line)
         if log:
             with log.open("a", encoding="utf-8") as stream:
                 stream.write(line + "\n")
 
-    async with BleTransport(args.address, service_uuid=args.service, rx_uuid=args.rx, tx_uuid=args.tx) as transport:
-        await transport.start_notify(received)
-        try:
-            await asyncio.sleep(args.seconds)
-        finally:
-            await transport.stop_notify()
+    manager.on_event = record
+    link = await manager.acquire(args.address)
+    try:
+        deadline = time.monotonic() + args.seconds
+        while time.monotonic() < deadline:
+            await asyncio.sleep(0.2)
+            for frame in await link.poll_unsolicited():
+                record(f"{time.time():.3f} RX {frame.hex()}")
+    finally:
+        await manager.release(args.address)
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="vantactl",
-        description="VantaDSP - safe JBL Portable protocol and EQ control",
+        prog="openjbl",
+        description="OpenJBL - safe JBL Portable protocol and EQ control",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -136,11 +164,22 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("presets", help="list APK EQ presets for a PID")
     p.add_argument("--pid", required=True)
 
-    p = sub.add_parser("profiles", help="list curated sound profiles, optionally resolved for a PID")
+    p = sub.add_parser("profiles", help="list sound profiles, optionally resolved for a PID")
     p.add_argument("--pid")
+    p.add_argument("--mine", action="store_true", help="list only your own saved profiles")
 
-    sub.add_parser("check-update", help="check the latest VantaDSP version on PyPI")
-    sub.add_parser("update", help="install the latest VantaDSP version from PyPI")
+    p = sub.add_parser("save-profile", help="save a gain curve as your own reusable profile")
+    p.add_argument("--name", required=True)
+    p.add_argument("--gains", required=True, type=float, nargs="+", help="gain per band, in dB")
+    p.add_argument("--pid", help="resample these gains from this model's bands onto the reference curve")
+    p.add_argument("--description", default="")
+    p.add_argument("--overwrite", action="store_true", help="replace an existing profile of the same name")
+
+    p = sub.add_parser("delete-profile", help="delete one of your saved profiles")
+    p.add_argument("--key", required=True, help="the profile key, e.g. user-my-bass")
+
+    sub.add_parser("check-update", help="check the latest OpenJBL version on PyPI")
+    sub.add_parser("update", help="install the latest OpenJBL version from PyPI")
 
     p = sub.add_parser("probe", help="read-only probe of every EQ protocol generation")
     add_connection(p)
@@ -220,7 +259,12 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("set-profile", help="apply a curated model-aware sound profile")
     add_connection(p)
     p.add_argument("--pid", required=True)
-    p.add_argument("profile", choices=[profile.key for profile in PROFILES])
+    p.add_argument("profile", choices=[profile.key for profile in ALL_PROFILES])
+    p.add_argument(
+        "--allow-extended",
+        action="store_true",
+        help="unlock a DANGER/LAB profile outside the model's normal UI range",
+    )
     p.add_argument("--apply", action="store_true")
 
     p = sub.add_parser("raw", help="send an expert-supplied raw frame")
@@ -252,18 +296,55 @@ def _main(argv: list[str] | None = None) -> None:
         dump(presets_for_pid(args.pid))
         return
     if args.command == "profiles":
-        rows = [
+        catalog = list(ALL_PROFILES) if not args.mine else []
+        catalog += load_user_profiles()
+        rows = []
+        for profile in catalog:
+            resolved = None
+            resolution_error = None
+            if args.pid:
+                try:
+                    resolved = resolve_curve(args.pid, profile)
+                except ValueError as exc:
+                    resolution_error = str(exc)
+            rows.append(
+                {
+                    "key": profile.key,
+                    "name": profile.name,
+                    "description": profile.description,
+                    "reference_gains": profile.gains,
+                    "resolved_gains": resolved,
+                    "resolution_error": resolution_error,
+                    "tags": profile.tags,
+                    "extended_encoder": profile.dangerous,
+                    "needs_confirmation": profile.boosts_past_standard,
+                }
+            )
+        dump(rows)
+        return
+    if args.command == "save-profile":
+        curve = curve_from_model_gains(args.pid, args.gains) if args.pid else tuple(args.gains)
+        profile = save_user_profile(
+            args.name,
+            curve,
+            description=args.description or curve_summary(curve),
+            overwrite=args.overwrite,
+        )
+        dump(
             {
                 "key": profile.key,
                 "name": profile.name,
                 "description": profile.description,
-                "reference_gains": profile.gains,
-                "resolved_gains": resolve_profile(args.pid, profile.key) if args.pid else None,
-                "tags": profile.tags,
+                "gains": profile.gains,
+                "stored_in": str(user_profiles_path()),
             }
-            for profile in PROFILES
-        ]
-        dump(rows)
+        )
+        return
+    if args.command == "delete-profile":
+        removed = delete_user_profile(args.key)
+        dump({"key": args.key, "deleted": removed})
+        if not removed:
+            raise SystemExit(f"no saved profile with key {args.key!r}")
         return
     if args.command == "check-update":
         dump(check_for_update_safe().as_dict())
@@ -332,8 +413,11 @@ def _main(argv: list[str] | None = None) -> None:
         selected_path, frames = auto_eq_frames(args.pid, args.gains)
         print(f"Selected: {selected_path}")
     elif args.command == "set-profile":
+        profile = get_profile(args.profile)
+        if profile.dangerous and not args.allow_extended:
+            raise SystemExit("DANGER/LAB profiles require --allow-extended")
         gains = resolve_profile(args.pid, args.profile)
-        selected_path, frames = auto_eq_frames(args.pid, gains)
+        selected_path, frames = auto_eq_frames(args.pid, gains, allow_extended=profile.dangerous)
         print(f"Profile: {args.profile}  Gains: {' '.join(f'{gain:g}' for gain in gains)}")
         print(f"Selected: {selected_path}")
     elif args.command == "raw":

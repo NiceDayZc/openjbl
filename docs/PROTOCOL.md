@@ -172,7 +172,7 @@ mapped_category:C1 | band1_index | band2_index | ... | band7_index | optional fi
 - Band 2-7 indices 0..24 represent +6..-6 in 0.5 dB steps.
 - APK-classified Grip-style PIDs: `2132`, `2168`, `2185`, `218A`.
 
-VantaDSP exposes these through `set-grip` and `set-auto`. The latter selects by PID instead of guessing from the advertising name.
+OpenJBL exposes these through `set-grip` and `set-auto`. The latter selects by PID instead of guessing from the advertising name.
 
 ## Requires confirmation on physical hardware
 

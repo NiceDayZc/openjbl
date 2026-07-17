@@ -12,7 +12,7 @@ from urllib.request import Request, urlopen
 
 from . import __version__
 
-PYPI_JSON_URL = "https://pypi.org/pypi/vantadsp/json"
+PYPI_JSON_URL = "https://pypi.org/pypi/openjbl/json"
 _VERSION_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:[.-]?(a|b|rc)(\d+))?$")
 
 
@@ -39,9 +39,9 @@ def _version_key(value: str) -> tuple[int, int, int, int, int]:
 
 
 def is_editable_install() -> bool:
-    """Return whether this interpreter imports VantaDSP from an editable checkout."""
+    """Return whether this interpreter imports OpenJBL from an editable checkout."""
     try:
-        direct_url = metadata.distribution("vantadsp").read_text("direct_url.json")
+        direct_url = metadata.distribution("openjbl").read_text("direct_url.json")
         if not direct_url:
             return False
         data = json.loads(direct_url)
@@ -51,7 +51,7 @@ def is_editable_install() -> bool:
 
 
 def fetch_latest_version(timeout: float = 5.0) -> str:
-    request = Request(PYPI_JSON_URL, headers={"User-Agent": f"VantaDSP/{__version__} update-check"})
+    request = Request(PYPI_JSON_URL, headers={"User-Agent": f"OpenJBL/{__version__} update-check"})
     with urlopen(request, timeout=timeout) as response:  # nosec B310
         data = json.load(response)
     latest = str(data["info"]["version"])
@@ -62,9 +62,9 @@ def fetch_latest_version(timeout: float = 5.0) -> str:
 def check_for_update(*, current: str = __version__, timeout: float = 5.0) -> UpdateResult:
     latest = fetch_latest_version(timeout)
     if _version_key(latest) > _version_key(current):
-        return UpdateResult(current, latest, "update-available", f"VantaDSP {latest} is available")
+        return UpdateResult(current, latest, "update-available", f"OpenJBL {latest} is available")
     if _version_key(latest) == _version_key(current):
-        return UpdateResult(current, latest, "up-to-date", f"VantaDSP {current} is current")
+        return UpdateResult(current, latest, "up-to-date", f"OpenJBL {current} is current")
     return UpdateResult(current, latest, "ahead-of-pypi", f"local {current} is newer than PyPI {latest}")
 
 
@@ -85,13 +85,13 @@ def install_version(version: str, *, timeout: float = 180.0) -> UpdateResult:
         "--upgrade",
         "--no-input",
         "--disable-pip-version-check",
-        f"vantadsp=={version}",
+        f"openjbl=={version}",
     ]
     completed = subprocess.run(command, capture_output=True, text=True, timeout=timeout, check=False)  # nosec B603
     if completed.returncode:
         detail = (completed.stderr or completed.stdout or "pip failed").strip().splitlines()[-1]
         return UpdateResult(__version__, version, "install-failed", detail)
-    return UpdateResult(__version__, version, "installed", f"VantaDSP {version} installed; restart required", True)
+    return UpdateResult(__version__, version, "installed", f"OpenJBL {version} installed; restart required", True)
 
 
 def auto_update(*, timeout: float = 5.0) -> UpdateResult:

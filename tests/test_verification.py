@@ -1,5 +1,5 @@
-from vantadsp import protocol
-from vantadsp.verification import verify_eq_readback
+from openjbl import protocol
+from openjbl.verification import verify_eq_readback
 
 
 def test_verifies_legacy_parametric_readback():

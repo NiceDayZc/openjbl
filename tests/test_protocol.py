@@ -2,9 +2,9 @@ import math
 
 import pytest
 
-from vantadsp import protocol
-from vantadsp.models import auto_eq_frames, find_models
-from vantadsp.protocol import (
+from openjbl import protocol
+from openjbl.models import auto_eq_frames, find_models
+from openjbl.protocol import (
     EQ_CATEGORIES,
     LegacyFrame,
     LegacyStreamDecoder,

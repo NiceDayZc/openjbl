@@ -2,8 +2,9 @@ from types import SimpleNamespace
 
 import pytest
 
-from vantadsp import probe, protocol, transport
-from vantadsp.transport import BleTransport, scan_ble
+from openjbl import probe, protocol, transport
+from openjbl.connection import LinkError, TransactionResult
+from openjbl.transport import BleTransport, scan_ble
 
 
 class FakeClient:
@@ -99,38 +100,38 @@ async def test_scan_enriches_and_prioritizes_detected_jbl(monkeypatch):
     assert rows[0]["live"] is True
 
 
-class FakeProbeTransport:
-    def __init__(self, *_args, **_kwargs):
-        pass
+class FakeProbeLink:
+    address = "fake"
 
-    async def __aenter__(self):
-        return self
-
-    async def __aexit__(self, *_args):
-        return None
+    def __init__(self, drop_on: str | None = None):
+        self.drop_on = drop_on
 
     async def services(self):
         return [{"uuid": "fake"}]
 
     async def transact(self, request, _timeout):
+        if self.drop_on is not None and request == getattr(protocol, self.drop_on)():
+            raise LinkError("speaker went away")
         if request == protocol.request_firmware_version():
-            return [bytes.fromhex("AA 42 04 03 00 07 01")]
-        if request == protocol.request_advanced_eq():
-            return [bytes.fromhex("AA EE 01 98")]
-        return [bytes((0xAA, 0xEE, 1, request[1] if request.startswith(b"\xaa") else 0))]
+            replies = [bytes.fromhex("AA 42 04 03 00 07 01")]
+        elif request == protocol.request_advanced_eq():
+            replies = [bytes.fromhex("AA EE 01 98")]
+        else:
+            replies = [bytes((0xAA, 0xEE, 1, request[1] if request.startswith(b"\xaa") else 0))]
+        return TransactionResult(replies=replies, attempts=1, reconnects=0, generation=1)
 
 
 @pytest.mark.asyncio
-async def test_probe_classifies_unsupported(monkeypatch):
-    monkeypatch.setattr(probe, "BleTransport", FakeProbeTransport)
-    result = await probe.probe_ble(
-        "fake",
-        pid="20e3",
-        service_uuid="service",
-        rx_uuid="rx",
-        tx_uuid="tx",
-        timeout=0.01,
-    )
+async def test_probe_classifies_unsupported():
+    result = await probe.probe_link(FakeProbeLink(), pid="20e3", timeout=0.01)
     assert result["services"] == [{"uuid": "fake"}]
     assert result["probes"]["firmware"]["status"] == "supported-response"
     assert result["probes"]["advanced_eq"]["status"] == "unsupported"
+    assert result["detected_eq_path"] == "no-supported-eq-response"
+
+
+@pytest.mark.asyncio
+async def test_probe_reports_a_dropped_link_instead_of_blaming_the_speaker():
+    """A dead link must not be reported as a speaker that lacks EQ support."""
+    with pytest.raises(LinkError, match="link dropped during the eq_mode probe"):
+        await probe.probe_link(FakeProbeLink(drop_on="request_eq_mode"), pid="20e3", timeout=0.01)
