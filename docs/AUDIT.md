@@ -7,8 +7,8 @@ Audited release candidate: `0.2.4`
 
 | Gate | Result |
 |---|---|
-| Unit/integration/headless TUI tests | 61 passed |
-| Full-package branch-aware coverage | 72.83% (release gate 70%) |
+| Unit/integration/headless TUI tests | 140 passed |
+| Full-package branch-aware coverage | 76.26% (release gate 65%, `fail_under` in pyproject.toml) |
 | Ruff lint and formatting | pass |
 | mypy package type check | pass |
 | Bandit static security scan | pass; no findings after reviewed B105 filter-name false positive is configured globally |

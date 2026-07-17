@@ -76,6 +76,10 @@ def check_for_update_safe(*, current: str = __version__, timeout: float = 5.0) -
 
 
 def install_version(version: str, *, timeout: float = 180.0) -> UpdateResult:
+    # Validate the exact string that goes into the argv, not a different one:
+    # _version_key strips before matching, so an unstripped value could pass the
+    # check and then reach pip with whitespace the check never saw.
+    version = version.strip()
     _version_key(version)
     command = [
         sys.executable,
@@ -95,17 +99,31 @@ def install_version(version: str, *, timeout: float = 180.0) -> UpdateResult:
 
 
 def auto_update(*, timeout: float = 5.0) -> UpdateResult:
+    """Check for a newer release and report it. Never installs.
+
+    This used to install whatever PyPI offered, at TUI launch, unprompted. That
+    made one compromise of one PyPI account enough to execute code on every
+    machine running OpenJBL, with no pin and no hash to notice it -- and pip
+    rewrote the live interpreter's site-packages while the process was about to
+    open a GATT link and write EQ frames, so lazily imported modules could come
+    from a tree being replaced underneath them.
+
+    Deciding to run new code is the user's call, so it stays theirs:
+    `openjbl update` installs when asked, and exits first.
+    """
     if is_editable_install():
         return UpdateResult(
-            __version__, None, "editable-skip", "editable development install; automatic update skipped"
+            __version__, None, "editable-skip", "editable development install; update check skipped"
         )
     check = check_for_update_safe(timeout=timeout)
-    if check.status != "update-available" or check.latest is None:
-        return check
-    try:
-        return install_version(check.latest)
-    except (OSError, subprocess.SubprocessError) as exc:
-        return UpdateResult(__version__, check.latest, "install-failed", f"{type(exc).__name__}: {exc}")
+    if check.status == "update-available" and check.latest is not None:
+        return UpdateResult(
+            check.current,
+            check.latest,
+            "update-available",
+            f"OpenJBL {check.latest} is available. Quit and run 'openjbl update' to install it.",
+        )
+    return check
 
 
 def update_now(*, timeout: float = 5.0) -> UpdateResult:

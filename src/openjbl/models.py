@@ -108,11 +108,56 @@ def _model_band_shape(pid: str, gains: list[float]) -> list[ParametricBand]:
     return bands
 
 
+# The range every model's own UI offers. Band 1 of the Charge 6 and the
+# Grip-style models reaches further down than the rest; see
+# docs/DEVICE_CHARGE6_20E3.md and resolve_profile's matching rule.
+STANDARD_GAIN_CEILING_DB = 6.0
+STANDARD_GAIN_FLOOR_DB = -6.0
+STANDARD_BAND1_FLOOR_DB = -9.0
+# ParametricBand.validate()'s bound: the furthest the float-parametric wire
+# format is trusted to carry, and only with a deliberate opt-in.
+EXTENDED_GAIN_LIMIT_DB = 24.0
+
+
+def _standard_floor(pid: str, index: int) -> float:
+    if index == 1 and (pid == "20e3" or pid in GRIP_STYLE_P4_PIDS):
+        return STANDARD_BAND1_FLOOR_DB
+    return STANDARD_GAIN_FLOOR_DB
+
+
+def _reject_out_of_range(pid: str, gains: list[float], *, allow_extended: bool) -> None:
+    """Bound the gains before any encoder sees them.
+
+    This has to live here rather than in the encoders. Only two of them carried a
+    per-model grid, so every other model reached the wire with whatever the caller
+    passed: set_simple_eq and set_advanced_levels check only that the value fits
+    in a signed byte, which is a fact about the wire, not about the speaker. On
+    those two encoders the byte is a level index into a firmware table, so an
+    out-of-range value is not "louder" or "quieter" -- it is undefined.
+    """
+    for index, value in enumerate(gains, 1):
+        gain = float(value)
+        if allow_extended:
+            if not -EXTENDED_GAIN_LIMIT_DB <= gain <= EXTENDED_GAIN_LIMIT_DB:
+                raise ValueError(
+                    f"band {index} gain {gain:g} dB is outside the protocol's "
+                    f"+/-{EXTENDED_GAIN_LIMIT_DB:g} dB bound"
+                )
+            continue
+        floor = _standard_floor(pid, index)
+        if not floor <= gain <= STANDARD_GAIN_CEILING_DB:
+            raise ValueError(
+                f"band {index} gain {gain:g} is outside the {floor:g}..{STANDARD_GAIN_CEILING_DB:g} "
+                f"range PID {pid} offers; pass allow_extended to go beyond it"
+            )
+
+
 def auto_eq_frames(pid: str, gains: list[float], *, allow_extended: bool = False) -> tuple[str, list[bytes]]:
     """Select the APK-declared EQ wire format for a model PID."""
     model = get_model(pid)
     normalized_pid = str(model.get("pid", "")).lower()
     features = set(model.get("features", []))
+    _reject_out_of_range(normalized_pid, gains, allow_extended=allow_extended)
 
     if "PROTOCOL_4" in features and normalized_pid in GRIP_STYLE_P4_PIDS:
         if allow_extended:

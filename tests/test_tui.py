@@ -1,3 +1,4 @@
+import asyncio
 from pathlib import Path
 
 import pytest
@@ -227,6 +228,97 @@ async def test_a_saved_profile_that_boosts_still_has_to_be_confirmed(monkeypatch
         assert str(app.query_one("#apply").label) == "CONFIRM DANGER APPLY", "first click must only arm"
 
 
+class ClampingSpeaker:
+    """A speaker that acknowledges the write and then does something else.
+
+    The existing apply test uses a fake that echoes back exactly what it was
+    handed, which makes verification.verified structurally always True -- the
+    readback gate could be deleted and the suite would stay green. Real firmware
+    is free to clamp, ignore or round; that is the whole reason the gate exists.
+    """
+
+    def __init__(self, clamp_to: float = 6.0):
+        self.clamp_to = clamp_to
+        self.state: bytes | None = None
+
+    def __call__(self, data):
+        frame = protocol.LegacyFrame.decode(data)
+        if frame.command == protocol.SET_ADVANCED_EQ:
+            parsed = protocol.parse_parametric_eq(frame.payload)
+            clamped = [min(self.clamp_to, band["gain"]) for band in parsed["bands"]]
+            bands = protocol.charge6_extended_bands(clamped)
+            self.state = protocol.LegacyFrame.decode(
+                protocol.set_parametric_eq(protocol.EQ_CATEGORIES["custom_c2"], bands), force_long=True
+            ).payload
+            return [protocol.LegacyFrame(protocol.RET_ADVANCED_EQ, frame.payload, long_length=True).encode()]
+        if frame.command == protocol.REQ_ADVANCED_EQ:
+            payload = self.state if self.state is not None else frame.payload
+            return [protocol.LegacyFrame(protocol.RET_ADVANCED_EQ, payload, long_length=True).encode()]
+        raise AssertionError(frame.command)
+
+
+@pytest.mark.asyncio
+async def test_a_speaker_that_clamps_the_gains_is_reported_as_a_mismatch():
+    """The speaker ACKs, so the ACK proves nothing; only the readback catches it."""
+    link = FakeLink(ClampingSpeaker(clamp_to=6.0))
+    app = OpenJBLApp(Settings(last_address="device-id", last_pid="20e3", auto_update=False))
+    app.manager = FakeManager(link)
+    async with app.run_test(size=(100, 30)) as pilot:
+        await pilot.pause()
+        app._verified_target = ("device-id", "20e3", link.generation)
+        app._set_eq_access(True, "test connection verified")
+        app.query_one("#profile-tier", Select).value = "lab"
+        await pilot.pause()
+        app.query_one("#profile", Select).value = "lab-max-bass"  # asks for +24 at 125 Hz
+        await pilot.pause()
+        app.apply_eq()  # arms
+        await pilot.pause()
+        app.apply_eq()  # confirms
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+        assert "WRITE MISMATCH" in str(app.query_one("#status-system", Static).render())
+
+
+@pytest.mark.asyncio
+async def test_a_read_cannot_cancel_an_apply_that_is_already_writing():
+    """Sharing a worker group meant 'r' cancelled an apply after the frame was on
+    the wire and before the readback -- one keystroke defeating the evidence."""
+    started = asyncio.Event()
+    release = asyncio.Event()
+
+    class SlowSpeaker(ClampingSpeaker):
+        pass
+
+    speaker = SlowSpeaker(clamp_to=99.0)
+
+    class SlowLink(FakeLink):
+        async def transact(self, data, _timeout=None):
+            frame = protocol.LegacyFrame.decode(data)
+            if frame.command == protocol.SET_ADVANCED_EQ:
+                started.set()
+                await release.wait()  # hold the write open
+            return await FakeLink.transact(self, data, _timeout)
+
+    link = SlowLink(speaker)
+    app = OpenJBLApp(Settings(last_address="device-id", last_pid="20e3", auto_update=False))
+    app.manager = FakeManager(link)
+    async with app.run_test(size=(100, 30)) as pilot:
+        await pilot.pause()
+        app._verified_target = ("device-id", "20e3", link.generation)
+        app._set_eq_access(True, "test connection verified")
+        app.query_one("#gains", Input).value = "0, 0, 0, 0, 0, 0, 0"
+        await pilot.pause()
+        app.apply_eq()
+        await asyncio.wait_for(started.wait(), timeout=2)
+        app.action_read()  # the keystroke that used to kill the apply
+        await pilot.pause()
+        apply_workers = [w for w in app.workers if w.name == "apply_worker"]
+        assert apply_workers and all(not w.is_cancelled for w in apply_workers), "the write must survive a read"
+        release.set()
+        await app.workers.wait_for_complete()
+        await pilot.pause()
+
+
 def test_tui_source_is_legacy_console_safe():
     source = Path(tui_module.__file__).read_text(encoding="utf-8")
     assert source.isascii()
@@ -440,3 +532,75 @@ async def test_auto_setup_verifies_the_strongest_speaker_and_opens_eq(monkeypatc
         assert app.query_one("#address", Input).value == "strong"
         assert app.query_one("#main-tabs").active == "eq-tab", "one press should land on the Equalizer"
         assert not app.query_one("#apply").disabled
+
+
+@pytest.mark.asyncio
+async def test_level_index_models_confirm_on_magnitude_not_only_on_boost():
+    """"A cut cannot clip" is a dB argument. On EQ_BALANCE and PRESET_EQ models the
+    wire value is an index into a firmware table, so -100 is not "very quiet", it
+    is an entry that does not exist -- there, both directions need confirming."""
+    link = FakeLink()
+    app = OpenJBLApp(Settings(last_address="device-id", last_pid="2050", auto_update=False))
+    app.manager = FakeManager(link)
+    async with app.run_test(size=(90, 26)) as pilot:
+        await pilot.pause()
+        app._verified_target = ("device-id", "2050", link.generation)
+        app._set_eq_access(True, "test connection verified")
+        assert app._gains_are_decibels() is False, "2050 is a level-index model"
+        app.query_one("#gains", Input).value = "-100, 0, 0"
+        await pilot.pause()
+        assert app._dangerous_profile() is True, "a huge negative index must be confirmed"
+        assert str(app.query_one("#apply").label) == "APPLY DANGEROUS PROFILE"
+
+
+@pytest.mark.asyncio
+async def test_decibel_models_keep_the_cuts_are_free_exemption():
+    link = FakeLink()
+    app = OpenJBLApp(Settings(last_address="device-id", last_pid="20e3", auto_update=False))
+    app.manager = FakeManager(link)
+    async with app.run_test(size=(90, 26)) as pilot:
+        await pilot.pause()
+        app._verified_target = ("device-id", "20e3", link.generation)
+        app._set_eq_access(True, "test connection verified")
+        assert app._gains_are_decibels() is True
+        app.query_one("#gains", Input).value = "0, -20, -20, -20, -20, -20, -20"
+        await pilot.pause()
+        assert app._dangerous_profile() is False, "a deep cut in dB costs level, not headroom"
+
+
+@pytest.mark.asyncio
+async def test_key_bindings_cannot_bypass_the_eq_lock():
+    """Disabling the buttons is not enough: a binding never consults
+    widget.disabled, so 'r' and 'w' reached the EQ path with the tab locked."""
+    link = FakeLink()
+    app = OpenJBLApp(Settings(last_address="device-id", last_pid="20e3", auto_update=False))
+    app.manager = FakeManager(link)
+    async with app.run_test(size=(90, 26)) as pilot:
+        await pilot.pause()
+        assert app._eq_access_allowed() is False
+        for action in ("read", "preview", "save_profile", "delete_profile"):
+            assert app.check_action(action, ()) is False, f"{action} must be refused while locked"
+        app._verified_target = ("device-id", "20e3", link.generation)
+        app._set_eq_access(True, "test connection verified")
+        for action in ("read", "preview", "save_profile"):
+            assert app.check_action(action, ()) is True
+
+
+@pytest.mark.asyncio
+async def test_an_empty_saved_tier_survives_a_model_change(monkeypatch, tmp_path):
+    """The empty tier parks the dropdown on a sentinel that is not a profile;
+    the next PID change used to raise ValueError out of the message pump."""
+    store = tmp_path / "profiles.json"
+    for name in ("load_user_profiles", "user_profile_options"):
+        original = getattr(tui_module, name)
+        monkeypatch.setattr(tui_module, name, (lambda fn: lambda *a, **k: fn(*a, **{**k, "path": store}))(original))
+    app = OpenJBLApp(Settings(last_address="device-id", last_pid="20e3", auto_update=False))
+    app.manager = FakeManager(FakeLink())
+    async with app.run_test(size=(90, 26)) as pilot:
+        await pilot.pause()
+        app.query_one("#profile-tier", Select).value = "user"
+        await pilot.pause()
+        app.query_one("#pid", Select).value = "2107"  # used to crash the app
+        await pilot.pause()
+        assert app.is_running
+        assert "Empty" in str(app.query_one("#profile-info", Static).render())

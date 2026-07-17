@@ -111,7 +111,9 @@ def test_lab_profiles_build_extended_charge6_packets():
         assert frames
         assert all(-24 <= value <= 24 for value in gains)
     assert any(24 in profile.gains or -24 in profile.gains for profile in LAB_PROFILES)
-    with pytest.raises(ValueError, match=r"-6\.\.\+6"):
+    # Without the opt-in the same curve is refused, now by auto_eq_frames' own
+    # range guard rather than by whichever encoder happened to have one.
+    with pytest.raises(ValueError, match=r"outside the .* range PID 20e3 offers"):
         auto_eq_frames("20e3", resolve_profile("20e3", "lab-test-8k"))
 
 

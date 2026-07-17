@@ -8,6 +8,7 @@ from contextlib import suppress
 from pathlib import Path
 
 from . import protocol
+from .audit import append_audit
 from .connection import ConnectionManager
 from .models import auto_eq_frames, auto_read_frames, find_models, get_model, preset_for_pid, presets_for_pid
 from .presets import ALL_PROFILES, curve_from_model_gains, curve_summary, get_profile, resolve_curve, resolve_profile
@@ -16,6 +17,7 @@ from .protocol import EQ_CATEGORIES, FILTER_TYPES, ParametricBand, describe_fram
 from .transport import RX_UUID, SERVICE_UUID, TX_UUID, SerialTransport, scan_ble
 from .updater import check_for_update_safe, update_now
 from .userprofiles import delete_user_profile, load_user_profiles, save_user_profile, user_profiles_path
+from .verification import verify_eq_readback
 
 
 def dump(value: object) -> None:
@@ -80,25 +82,105 @@ async def send_ble(args: argparse.Namespace, frames: list[bytes]) -> list[bytes]
     return replies
 
 
-def send(args: argparse.Namespace, frames: list[bytes]) -> None:
-    print("TX:")
-    for frame in frames:
-        print(hex_bytes(frame))
-    if getattr(args, "mutating", False) and not args.apply:
-        print("DRY-RUN: nothing was sent; add --apply only after checking the model and packet")
-        return
-    if args.port:
-        transport = SerialTransport(args.port, timeout=args.timeout)
-        replies = [transport.transact(frame) for frame in frames]
-    else:
-        replies = asyncio.run(send_ble(args, frames))
+def _report_replies(replies: list[bytes]) -> bool:
+    """Print each reply and say whether the device rejected any of them."""
+    rejected = False
     for reply in replies:
         if not reply:
             print("RX: <timeout/no data>")
             continue
         print("RX:", hex_bytes(reply))
         with suppress(ValueError):
-            dump(describe_frame(reply))
+            decoded = describe_frame(reply)
+            rejected = rejected or decoded.get("command") == protocol.DEV_ERROR
+            dump(decoded)
+    return rejected
+
+
+def send(args: argparse.Namespace, frames: list[bytes]) -> None:
+    """Send frames, and for a mutating command prove what actually happened.
+
+    The TUI has always read the EQ back and compared it band by band before
+    claiming a write worked. The CLI printed the reply bytes and exited 0, so
+    `--apply` could reject the frame, or land on a speaker that clamped it, and
+    the script driving it would never know. The same evidence is now required on
+    both paths, because it is the same hardware.
+    """
+    print("TX:")
+    for frame in frames:
+        print(hex_bytes(frame))
+    mutating = bool(getattr(args, "mutating", False))
+    if mutating and not args.apply:
+        print("DRY-RUN: nothing was sent; add --apply only after checking the model and packet")
+        return
+    if args.port:
+        transport = SerialTransport(args.port, timeout=args.timeout)
+        replies = [transport.transact(frame) for frame in frames]
+        if _report_replies(replies):
+            raise SystemExit("the device rejected the frame (0xEE)")
+        return
+
+    verify_gains = getattr(args, "_verify_gains", None)
+    pid = getattr(args, "pid", None)
+    if not (mutating and verify_gains and pid):
+        if _report_replies(asyncio.run(send_ble(args, frames))):
+            raise SystemExit("the device rejected the frame (0xEE)")
+        return
+    outcome = asyncio.run(_apply_verified(args, frames, verify_gains, pid))
+    if outcome:
+        raise SystemExit(outcome)
+
+
+async def _apply_verified(
+    args: argparse.Namespace, frames: list[bytes], gains: list[float], pid: str
+) -> str | None:
+    """Write, then read the EQ back and compare it band by band. Returns an error."""
+    read_path, read_frames = auto_read_frames(pid)
+    manager = _manager(args)
+    link = await manager.acquire(args.address)
+    started = time.perf_counter()
+    write_replies: list[bytes] = []
+    read_replies: list[bytes] = []
+    frames_written = 0
+    try:
+        before: list[bytes] = []
+        for frame in read_frames:
+            before.extend((await link.transact(frame, args.timeout)).replies)
+        precheck = verify_eq_readback(gains, before)
+        print(f"BEFORE: {precheck.status}  actual={precheck.actual}")
+
+        for frame in frames:
+            frames_written += 1  # counted before the await: transact writes, then waits
+            write_replies.extend((await link.transact(frame, args.timeout)).replies)
+        rejected = _report_replies(write_replies)
+
+        for frame in read_frames:
+            read_replies.extend((await link.transact(frame, args.timeout)).replies)
+        verification = verify_eq_readback(gains, read_replies)
+        print(f"AFTER:  {verification.status}  actual={verification.actual}  delta={verification.deltas}")
+        print(f"VERIFY: {verification.message}  (readback via {read_path})")
+    finally:
+        append_audit(
+            "eq-apply",
+            address=args.address,
+            pid=pid,
+            applied=frames_written > 0,
+            details={
+                "path": "cli",
+                "gains": gains,
+                "tx": [hex_bytes(frame) for frame in frames],
+                "frames_written": frames_written,
+                "write_rx": [hex_bytes(reply) for reply in write_replies],
+                "readback_rx": [hex_bytes(reply) for reply in read_replies],
+                "elapsed_ms": round((time.perf_counter() - started) * 1000),
+            },
+        )
+        await manager.release(args.address)
+    if rejected:
+        return "the device rejected the write (0xEE)"
+    if not verification.verified:
+        return f"write NOT verified: {verification.message}"
+    return None
 
 
 async def services(args: argparse.Namespace) -> None:
@@ -254,6 +336,11 @@ def build_parser() -> argparse.ArgumentParser:
     add_connection(p)
     p.add_argument("--pid", required=True)
     p.add_argument("gains", nargs="+", type=float, metavar="GAIN")
+    p.add_argument(
+        "--allow-extended",
+        action="store_true",
+        help="allow gains beyond the model's own UI range, on protocols that can carry them",
+    )
     p.add_argument("--apply", action="store_true")
 
     p = sub.add_parser("set-profile", help="apply a curated model-aware sound profile")
@@ -410,7 +497,8 @@ def _main(argv: list[str] | None = None) -> None:
         else:
             raise SystemExit("this PID uses coefficient/level presets; custom control is available through set-levels")
     elif args.command == "set-auto":
-        selected_path, frames = auto_eq_frames(args.pid, args.gains)
+        selected_path, frames = auto_eq_frames(args.pid, args.gains, allow_extended=args.allow_extended)
+        args._verify_gains = list(args.gains)
         print(f"Selected: {selected_path}")
     elif args.command == "set-profile":
         profile = get_profile(args.profile)
@@ -418,6 +506,7 @@ def _main(argv: list[str] | None = None) -> None:
             raise SystemExit("DANGER/LAB profiles require --allow-extended")
         gains = resolve_profile(args.pid, args.profile)
         selected_path, frames = auto_eq_frames(args.pid, gains, allow_extended=profile.dangerous)
+        args._verify_gains = list(gains)
         print(f"Profile: {args.profile}  Gains: {' '.join(f'{gain:g}' for gain in gains)}")
         print(f"Selected: {selected_path}")
     elif args.command == "raw":

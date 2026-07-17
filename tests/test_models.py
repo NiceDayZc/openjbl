@@ -71,3 +71,36 @@ def test_model_specific_read_and_gain_count(pid, count, read_path):
     path, frames = auto_read_frames(pid)
     assert path == read_path
     assert frames
+
+
+def test_gain_range_is_enforced_for_every_eq_capable_model():
+    """The check used to live inside the Charge 6 branch, so 16 of 21 models
+    reached the wire with whatever the caller passed: set_simple_eq and
+    set_advanced_levels only check that the value fits in a signed byte, which is
+    a fact about the wire, not about the speaker."""
+    pids = [str(m.get("pid")) for m in all_models() if gain_count_for_pid(str(m.get("pid")))]
+    assert len(pids) >= 21
+    for pid in pids:
+        count = gain_count_for_pid(pid)
+        for value in (24.0, 127.0, -100.0, -24.0):
+            with pytest.raises(ValueError, match="outside the"):
+                auto_eq_frames(pid, [value] * count)
+
+
+def test_the_extended_opt_in_only_unlocks_protocols_that_can_carry_it():
+    # float-parametric: opt-in works
+    path, frames = auto_eq_frames("20e3", [24] * 7, allow_extended=True)
+    assert frames and "parametric" in path
+    # level-index encoders: the value is a table index, so there is nothing to unlock
+    for pid in ("2050", "215c"):
+        with pytest.raises(ValueError, match="does not support extended"):
+            auto_eq_frames(pid, [24] * gain_count_for_pid(pid), allow_extended=True)
+
+
+def test_charge6_band_one_keeps_its_wider_floor():
+    """Band 1 is -9..+6 on the Charge 6 and Grip models; the guard must not
+    reject what resolve_profile is allowed to produce."""
+    _, frames = auto_eq_frames("20e3", [-9, 0, 0, 0, 0, 0, 0])
+    assert frames
+    with pytest.raises(ValueError, match="outside the"):
+        auto_eq_frames("20e3", [0, -9, 0, 0, 0, 0, 0])  # band 2 only goes to -6

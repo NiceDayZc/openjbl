@@ -2,6 +2,37 @@
 
 All notable changes follow Keep a Changelog style. This project uses semantic versioning while its public API stabilizes.
 
+## [Unreleased]
+
+A whole-system adversarial audit raised 46 findings; 29 survived refutation. 0.3.0 was built but never published, so nothing below ever reached a user.
+
+### Security
+
+- **The TUI no longer installs anything.** `auto_update` defaulted to true and ran `pip install` at launch against an unpinned, unhashed PyPI version with no prompt, so one compromise of one PyPI account meant code execution on every machine running OpenJBL -- while pip rewrote the live interpreter's site-packages under a process about to open a GATT link and write EQ. It now reports that a release exists; `openjbl update` installs when asked. The default is off entirely.
+- `install_version` validated a stripped copy of the version string and then passed the unstripped original to pip. It now validates exactly what it passes.
+
+### Fixed
+
+- **`set-auto` wrote +/-24 dB with no opt-in on 16 of 21 models.** The gain range was checked inside the Charge 6 branch, so every other model reached the wire with whatever the caller passed -- `set_simple_eq` and `set_advanced_levels` only check that a value fits in a signed byte, which is a fact about the wire, not about the speaker. The check now lives in `auto_eq_frames` and applies to every branch; `set-auto` gained the `--allow-extended` flag `set-profile` already had.
+- **The extended-gain confirmation used a decibel argument on encoders that do not carry decibels.** "A cut cannot clip" holds for float-parametric gains; on `EQ_BALANCE` and `PRESET_EQ` models the wire value is an index into a firmware table, where -100 is not "very quiet" but an entry that does not exist. Those models now confirm on magnitude in either direction.
+- **Pressing `r` cancelled an apply after the frame was already on the wire.** READ and APPLY shared an exclusive worker group, so one keystroke discarded the readback that the whole apply path exists to produce. Read has its own group.
+- **`apply_worker` authorised once and kept writing across a reconnect that had already revoked it.** The link generation is now re-checked before every frame.
+- **A failed subscription cached a connected but deaf link forever**: writes reached the speaker and then reported a timeout, because the reply had nowhere to arrive. `connect()` now publishes nothing until the subscription is up, and disconnects on failure.
+- **`acquire()` raced the reconnect task**, building a second GATT client to one speaker and orphaning the first permanently -- speakers cap concurrent links -- while invalidating a link that was up. `connect()` is single-flight and `acquire()` joins an in-flight recovery instead of racing it.
+- The audit record claimed `applied=false` for frames the speaker had already received, because the counter incremented after the await rather than before the write.
+- "ALREADY MATCHED" was claimed about a pre-write state that was never decoded; unverified and verified had been folded together. Three states are now reported as three.
+- The EQ lock disabled the buttons, but key bindings do not consult `disabled`, so `r`/`v`/`w` bypassed it entirely. `check_action` gates them.
+- An empty MY PROFILES tier parked the dropdown on a sentinel that is not a profile, and the next model change raised `ValueError` out of the Textual message pump and killed the app.
+- `curve_from_model_gains`' band-count check compared a list against itself, so `--gains 5 3 -2` on a seven-band speaker silently padded four bands the user never entered.
+- The saved-profile loader trusted the length that save enforced, so a hand-edited `profiles.json` raised `IndexError` past every handler.
+- **Both shelf bands went to hardware with Q=0.7 where the app sends 0.707** -- including on the extended-gain path. The band table is now read from the APK's own `custom_c2_eq.json` instead of restated in Python, which is how it drifted.
+- `openjbl set-auto --apply` and `set-profile --apply` now read the EQ back, compare it band by band, write an audit record, and exit non-zero on a rejected or unverified write. Only the TUI did that before; the CLI printed reply bytes and exited 0.
+- README's Python API example raised `ImportError`, its `set-parametric` example exited 2, its `decode` example was a byte short, it documented 24 of 87 profiles, and it told users to press a button that does not exist. Every offline example in the README is now executed by hand against the built package.
+
+### Added
+
+- Byte-exact wire tests (`tests/test_wire_format.py`) with golden vectors from the hardware-validated Charge 6 record, plus a non-echoing fake speaker that clamps like real firmware. The apply gate, the C2 category byte and the extended encoder's frequency/Q table could each be mutated with the whole suite green; they now fail.
+
 ## [0.3.0] - 2026-07-17
 
 ### Changed

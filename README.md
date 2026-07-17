@@ -15,7 +15,7 @@ OpenJBL is a safety-first Python toolkit and monochrome terminal interface for i
 - Legacy simple, advanced-level, and parametric EQ codecs
 - Protocol 4 `0E02` parametric and Grip-style `0E7F` quantized EQ codecs
 - PID-based automatic protocol routing across 37 catalogued models
-- 24 curated sound profiles mapped to each model's band layout and quantization
+- 87 sound profiles across three tiers: 24 standard, 63 extended-range LAB curves, and your own saved profiles. See [docs/PROFILES.md](docs/PROFILES.md).
 - Read-only multi-generation probing, raw packet capture/decoding, and expert packet transmission
 - Verified writes with protocol acknowledgement, automatic EQ read-back, per-band comparison, and detailed transaction logs
 - CLI dry-run by default, direct TUI apply, target hashing, and JSONL audit logs
@@ -28,7 +28,7 @@ Install the latest release from PyPI:
 python -m pip install openjbl
 ```
 
-PyPI installations check for updates in the background when `openjbl-tui` starts. A newer release is installed with the same Python interpreter, and Activity reports that a restart is required. Editable development installs are never overwritten automatically. Manual commands are also available:
+OpenJBL never installs anything on its own. Set `auto_update` in `%LOCALAPPDATA%\openjbl\config.json` to have the TUI check PyPI at launch and tell you when a newer release exists; installing it is always an explicit command. Deciding to run new code is yours to make, and pip rewriting site-packages under a process that is about to drive a radio is not something to do in the background.
 
 ```powershell
 openjbl check-update
@@ -55,7 +55,7 @@ Launch the TUI:
 openjbl-tui
 ```
 
-The interface provides DEVICE, EQUALIZER, and ACTIVITY workspaces, plus a detailed SYSTEM / DEVICE / PROTOCOL status strip. EQ remains locked until `CONNECT + VERIFY` establishes a live BLE connection and receives a supported EQ response; cached Windows pairing metadata never unlocks it. Changing the address/model or encountering a connection failure locks it again. `APPLY TO SPEAKER` reads the state before writing, writes after model and gain validation, checks the acknowledgement, reads the EQ again, and reports `WRITE VERIFIED` only when the acknowledgement is accepted and every decoded band matches. It distinguishes `CHANGED + VERIFIED` from `ALREADY MATCHED + VERIFIED`. Activity opens automatically and records the transaction ID, route, target fingerprint, before/write/after TX/RX frames, decoded responses, requested and actual gains, per-band deltas, elapsed time, and failure stage. Audit records store a hash of the target instead of its Bluetooth address.
+The interface provides DEVICE, EQUALIZER, and ACTIVITY workspaces, plus a detailed SYSTEM / DEVICE / PROTOCOL status strip. EQ remains locked until `SCAN + AUTO VERIFY` or `RE-VERIFY SELECTED` establishes a live BLE connection and receives a supported EQ response; cached Windows pairing metadata never unlocks it. Changing the address/model or encountering a connection failure locks it again. `APPLY TO SPEAKER` reads the state before writing, writes after model and gain validation, checks the acknowledgement, reads the EQ again, and reports `WRITE VERIFIED` only when the acknowledgement is accepted and every decoded band matches. It distinguishes `CHANGED + VERIFIED` from `ALREADY MATCHED + VERIFIED`, and says so only when the pre-write state was actually decoded. Activity opens automatically and records the transaction ID, route, target fingerprint, before/write/after TX/RX frames, decoded responses, requested and actual gains, per-band deltas, elapsed time, and failure stage. Audit records store a hash of the target instead of its Bluetooth address.
 
 Runtime configuration and audit files are stored under `%LOCALAPPDATA%\openjbl\` on Windows. Bluetooth must be enabled, and Windows must permit desktop apps to use Bluetooth and location. For SPP, pair the speaker first and locate its outgoing COM port in Device Manager.
 
@@ -103,7 +103,9 @@ openjbl profiles
 
 `set-auto` chooses legacy simple, advanced-level, legacy parametric, Protocol 4 `0E02`, or Grip-style `0E7F` from the APK-derived model profile. It refuses products for which the APK does not declare EQ support.
 
-Included profiles cover Flat, Balanced, Bass Heavy, Deep Bass, Punch Bass, Warm, Loudness, Crystal Clear, Bright, Detail Monitor, Vocal, Podcast, Acoustic, Rock, Metal, Hip-Hop, EDM, Pop, Jazz, Classical, Cinema, Gaming, Outdoor, and Night. See [Sound profiles](docs/PROFILES.md).
+The 24 standard profiles stay inside each model's own UI range: Flat, Balanced, Bass Heavy, Deep Bass, Punch Bass, Warm, Loudness, Crystal Clear, Bright, Detail Monitor, Vocal, Podcast, Acoustic, Rock, Metal, Hip-Hop, EDM, Pop, Jazz, Classical, Cinema, Gaming, Outdoor, and Night.
+
+A further 63 LAB profiles reach beyond it, up to +/-24 dB, and need `--allow-extended`. Most of them spend that range on cuts, which is what it is good for: a large boost has to come out of the DSP's headroom and the speaker's limiter, so it distorts and then gets quieter, while a cut costs level the volume knob gives back. The 18 that do boost are labelled DANGER and need a second, deliberate confirmation in the TUI. Run `openjbl profiles` for the full list, or see [Sound profiles](docs/PROFILES.md).
 
 Examples for direct codec control:
 
@@ -115,14 +117,14 @@ openjbl set-simple --bass 4 --mid 1 --treble -1
 openjbl set-levels 3 2 1 0 -1 -2 -3
 
 # Legacy parametric bands: type,frequency,gain,q
-openjbl set-parametric `
-  "low-shelf,125,3,0.7" `
-  "peaking,250,2,2" `
-  "peaking,500,0,2" `
-  "peaking,1000,-1,2" `
-  "peaking,2000,0,2" `
-  "peaking,4000,1,2" `
-  "high-shelf,8000,2,0.7"
+openjbl set-parametric --category custom_c2 `
+  --band "low_shelf,125,3,0.707" `
+  --band "peaking,250,2,2" `
+  --band "peaking,500,0,2" `
+  --band "peaking,1000,-1,2" `
+  --band "peaking,2000,0,2" `
+  --band "peaking,4000,1,2" `
+  --band "high_shelf,8000,2,0.707"
 
 # Charge 6 custom-band order: 125, 250, 500, 1k, 2k, 4k, 8kHz
 openjbl set-charge6 5 3 -2.5 -3 -2 -.5 1
@@ -134,7 +136,7 @@ Filter types are `low-shelf`, `peaking`, `high-shelf`, `low-pass`, and `high-pas
 
 ```powershell
 openjbl listen --address DEVICE --seconds 15 --log capture.log
-openjbl decode "AA9800"
+openjbl decode "AA980000"
 openjbl raw "AA6C00"
 openjbl raw "AA6C00" --address DEVICE --apply --i-understand
 ```
@@ -150,11 +152,10 @@ openjbl raw "AA6C00" --port COM7 --apply --i-understand
 ## Python API
 
 ```python
-from openjbl.protocol import build_simple_eq_set, parse_legacy_frame
+from openjbl.protocol import describe_frame, set_simple_eq
 
-packet = build_simple_eq_set(bass=4, mid=1, treble=-1)
-frame = parse_legacy_frame(packet)
-print(packet.hex(), frame)
+packet = set_simple_eq(category=0xC1, bass=4, mid=1, treble=-1)
+print(packet.hex(), describe_frame(packet))
 ```
 
 Protocol builders perform no Bluetooth I/O, so they are deterministic and reusable. Real transmission is isolated in `openjbl.transport`; applications should retain an explicit safety confirmation layer.

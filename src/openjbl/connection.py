@@ -83,6 +83,10 @@ class Link:
 
     _client: Any = field(default=None, init=False, repr=False)
     _lock: asyncio.Lock = field(default_factory=asyncio.Lock, init=False, repr=False)
+    # Serialises connect() against itself. The reconnect task and an acquire()
+    # can both reach connect() at once; without this they build two clients to
+    # one speaker and the loser is orphaned, still connected and unreachable.
+    _connect_lock: asyncio.Lock = field(default_factory=asyncio.Lock, init=False, repr=False)
     _inbound: asyncio.Queue[bytes] = field(default_factory=asyncio.Queue, init=False, repr=False)
     _decoder: LegacyStreamDecoder = field(default_factory=LegacyStreamDecoder, init=False, repr=False)
     _generation: int = field(default=0, init=False)
@@ -109,27 +113,47 @@ class Link:
         return self._client is not None and bool(self._client.is_connected)
 
     async def connect(self) -> None:
+        """Bring the link up, or leave nothing behind.
+
+        A link is only usable once it is subscribed, so nothing is published to
+        self._client until the subscription is up. Publishing first meant a
+        _subscribe() failure cached a client that was connected but deaf: every
+        later write reached the speaker and then reported a timeout, because the
+        reply had nowhere to arrive.
+        """
         from bleak import BleakClient
 
-        self._releasing = False
-        client = BleakClient(self.address, disconnected_callback=self._on_disconnect)
-        await client.connect()
-        if not bool(client.is_connected):
-            with contextlib.suppress(Exception):
-                await client.disconnect()
-            raise ConnectionError(f"BLE client did not reach connected state for {self.address}")
-        self._client = client
-        self._generation += 1
-        # Reassembly is per-connection: a partial frame left over from a dropped
-        # link would corrupt the next decode.
-        self._decoder = LegacyStreamDecoder()
-        # Drain rather than replace the queue: a _collect() parked on the old
-        # object would never see a new one, and would sit there until it timed out.
-        while not self._inbound.empty():
-            self._inbound.get_nowait()
-        await self._subscribe()
+        async with self._connect_lock:
+            if self.connected:
+                # A concurrent caller already brought it up. Never build a rival
+                # client: the old one would stay connected, unreferenced and
+                # undisconnectable, holding one of the speaker's few GATT slots.
+                return
+            self._releasing = False
+            client = BleakClient(self.address, disconnected_callback=self._on_disconnect)
+            await client.connect()
+            if not bool(client.is_connected):
+                with contextlib.suppress(Exception):
+                    await client.disconnect()
+                raise ConnectionError(f"BLE client did not reach connected state for {self.address}")
+            try:
+                # Reassembly is per-connection: a partial frame left over from a
+                # dropped link would corrupt the next decode.
+                self._decoder = LegacyStreamDecoder()
+                # Drain rather than replace the queue: a _collect() parked on the
+                # old object would never see a new one and would sit there until
+                # it timed out.
+                while not self._inbound.empty():
+                    self._inbound.get_nowait()
+                await self._subscribe(client)
+            except BaseException:
+                with contextlib.suppress(Exception):
+                    await client.disconnect()
+                raise
+            self._client = client
+            self._generation += 1
 
-    async def _subscribe(self) -> None:
+    async def _subscribe(self, client: Any) -> None:
         """Subscribe once and stay subscribed for the life of the link.
 
         GattControllerImpl.java:774-778 enables the CCCD at service discovery and
@@ -142,7 +166,7 @@ class Link:
             for frame in self._ingest(bytes(data)):
                 self._inbound.put_nowait(frame)
 
-        await self._client.start_notify(self.rx_uuid, on_notify)
+        await client.start_notify(self.rx_uuid, on_notify)
 
     def _ingest(self, data: bytes) -> list[bytes]:
         """Reassemble inbound notifications into whole frames.
@@ -198,11 +222,16 @@ class Link:
             return
         self.on_event(f"LINK    |  Gave up after {MAX_RECONNECT_ATTEMPTS} reconnect attempts")
 
-    async def _recover(self) -> None:
-        """Bring the link back before a transaction, reusing the reconnect budget."""
+    async def await_recovery(self) -> None:
+        """Wait for any in-flight reconnect to finish, without starting one."""
         task = self._reconnect_task
         if task is not None and not task.done():
-            await task  # a drop callback already started recovery; do not race it
+            with contextlib.suppress(asyncio.CancelledError):
+                await task
+
+    async def _recover(self) -> None:
+        """Bring the link back before a transaction, reusing the reconnect budget."""
+        await self.await_recovery()  # a drop callback already started recovery; do not race it
         if not self.connected:
             await self.connect()
 
@@ -402,8 +431,18 @@ class ConnectionManager:
                 tx_uuid=self.tx_uuid,
                 on_event=self.on_event,
             )
-            self._links[key] = link
+            # A drop callback may already be recovering this link. Joining it
+            # rather than racing it is what stops two clients reaching the same
+            # speaker -- and it is the guard _recover() already uses on the
+            # transact path.
+            await link.await_recovery()
+            if link.connected:
+                self._links[key] = link
+                return link
             await link.connect()
+            # Published only once it is actually up: a half-open link left in the
+            # map would be handed to the next caller as though it were usable.
+            self._links[key] = link
             self.on_event(f"LINK    |  Connected to {address}; holding open")
             return link
 

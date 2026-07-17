@@ -65,10 +65,15 @@ def _validate(name: str, gains: Sequence[float]) -> tuple[str, tuple[float, ...]
 
 
 def _to_profile(row: dict[str, Any]) -> SoundProfile:
-    gains = tuple(float(gain) for gain in row["gains"])
+    name = str(row["name"])
+    # The read path runs the same validation as the write path. Trusting the
+    # length because save() checked it once assumes nothing ever edits the file,
+    # and a short curve raised IndexError from deep inside the interpolator --
+    # past every ValueError handler, taking the TUI down with it.
+    _, gains = _validate(name, row["gains"])
     return SoundProfile(
         key=str(row["key"]),
-        name=str(row["name"]),
+        name=name,
         description=str(row.get("description") or "Saved profile"),
         gains=gains,  # type: ignore[arg-type]
         tags=("user",),

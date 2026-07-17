@@ -390,6 +390,51 @@ async def test_a_stale_clients_drop_does_not_tear_down_the_live_link():
 
 
 @pytest.mark.asyncio
+async def test_a_link_that_cannot_subscribe_is_not_kept(monkeypatch):
+    """A connected but unsubscribed client is deaf: writes reach the speaker and
+    the reply has nowhere to arrive, so every later call reports a timeout for a
+    write that actually landed. It must not be cached, or even stay connected."""
+    manager = ConnectionManager()
+
+    async def no_subscription(_self, _uuid, _callback):
+        raise OSError("CCCD write rejected")
+
+    monkeypatch.setattr(FakeBleakClient, "start_notify", no_subscription)
+    with pytest.raises(OSError, match="CCCD write rejected"):
+        await manager.acquire("AA:BB:CC")
+
+    assert manager.live("AA:BB:CC") is None, "a deaf link must not be handed to the next caller"
+    assert FakeBleakClient.instances[0].disconnect_calls == 1, "and must not be left holding a GATT slot"
+
+
+@pytest.mark.asyncio
+async def test_acquire_joins_an_in_flight_reconnect_instead_of_racing_it():
+    """Two clients to one speaker orphans the loser: still connected, no longer
+    referenced, holding one of the few GATT slots the speaker has."""
+    manager = ConnectionManager()
+    link = await manager.acquire("AA:BB:CC")
+    FakeBleakClient.instances[0].drop()  # starts the reconnect task
+
+    again = await manager.acquire("AA:BB:CC")  # lands inside the reconnect window
+
+    assert again is link
+    await link.await_recovery()
+    assert len(FakeBleakClient.instances) == 2, "exactly one new client, not two"
+    assert link.connected is True
+    assert manager.holds_generation("AA:BB:CC", link.generation) is True, "the live link must stay authorised"
+
+
+@pytest.mark.asyncio
+async def test_concurrent_connects_do_not_build_rival_clients():
+    manager = ConnectionManager()
+    link = Link("AA:BB:CC")
+    await asyncio.gather(link.connect(), link.connect(), link.connect())
+    assert len(FakeBleakClient.instances) == 1, "connect() must be single-flight"
+    assert link.connected is True
+    del manager
+
+
+@pytest.mark.asyncio
 async def test_idle_link_still_surfaces_pushes():
     """`listen` has no transaction in flight, so pushes must be reachable
     without one."""

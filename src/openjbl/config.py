@@ -25,7 +25,12 @@ class Settings:
     tx_uuid: str = TX_UUID
     timeout: float = 3.0
     scan_seconds: float = 8.0
-    auto_update: bool = True
+    # Check for updates, but never install one behind the user's back. Installing
+    # unpinned code from PyPI at launch would make a single compromise of one
+    # account into code execution on every machine running this, and pip would be
+    # rewriting site-packages under a process that is about to drive a radio and
+    # write EQ to hardware. `openjbl update` installs, deliberately, when asked.
+    auto_update: bool = False
 
     @classmethod
     def load(cls, path: Path | None = None) -> Settings:

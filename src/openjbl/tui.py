@@ -32,7 +32,7 @@ from . import __build_id__, __version__
 from .audit import append_audit, target_fingerprint
 from .config import Settings
 from .connection import ConnectionManager, Link
-from .models import all_models, auto_eq_frames, auto_read_frames, gain_count_for_pid, summarize_model
+from .models import all_models, auto_eq_frames, auto_read_frames, gain_count_for_pid, get_model, summarize_model
 from .presets import (
     STANDARD_MAX_BOOST_DB,
     SoundProfile,
@@ -64,10 +64,17 @@ AUTO_SELECT_RSSI_FLOOR = -85
 # Two speakers within this margin are a coin toss; show the table instead.
 AUTO_SELECT_MARGIN_DB = 6
 # No standard profile resolves above this on any model in the APK database, so a
-# boost beyond it was hand-entered and gets the extended-gain confirmation --
-# whichever profile happens to be selected in the dropdown. Cuts are deliberately
-# not included: a cut cannot clip, it only costs level.
+# value beyond it was hand-entered and gets the extended-gain confirmation --
+# whichever profile happens to be selected in the dropdown. On dB models only a
+# boost counts, because a cut costs level rather than headroom; on level-index
+# models magnitude in either direction counts, because there the number is a
+# table entry and out-of-range is undefined rather than quiet.
 STANDARD_MAX_GAIN_DB = STANDARD_MAX_BOOST_DB
+# The stand-in shown when MY PROFILES is empty. Select cannot hold no options,
+# so this occupies the dropdown -- but it is not a profile, and every consumer
+# has to know that.
+EMPTY_TIER_KEY = "none"
+EMPTY_TIER_LABEL = "No saved profiles yet"
 TIER_LABELS = {
     "standard": "STANDARD / MODEL UI RANGE",
     "lab": "LAB / EXTENDED +/-24 dB",
@@ -313,9 +320,10 @@ class OpenJBLApp(App[None]):
 
     @work(exclusive=False, group="update")
     async def update_worker(self) -> None:
-        """Its own group: exclusive cancellation targets a whole group, so without
-        one, pressing SCAN at launch cancels this await -- while the pip install
-        it started inside a thread keeps running and swaps files mid-session.
+        """Report that a newer release exists. Nothing is installed from here.
+
+        Its own group because exclusive cancellation targets a whole group, and
+        this must not be cancelled by the user pressing SCAN.
         """
         self.log_message("UPDATE  |  Checking PyPI in the background...")
         result = await asyncio.to_thread(auto_update)
@@ -323,11 +331,10 @@ class OpenJBLApp(App[None]):
             f"UPDATE  |  status={result.status}  |  current={result.current}  |  latest={result.latest}  |  "
             f"{result.message}"
         )
-        if result.installed:
-            self._status(system="UPDATE INSTALLED")
-            self.notify(result.message, title="Update installed", severity="information", timeout=10)
-        elif result.status in {"install-failed", "check-failed"}:
-            self.notify(result.message, title="Automatic update unavailable", severity="warning")
+        if result.status == "update-available":
+            self.notify(result.message, title="Update available", severity="information", timeout=10)
+        elif result.status == "check-failed":
+            self.notify(result.message, title="Update check unavailable", severity="warning")
 
     def log_message(self, message: str) -> None:
         self.query_one("#log", RichLog).write(message)
@@ -408,6 +415,14 @@ class OpenJBLApp(App[None]):
             self._reset_danger_arm()
         self._update_eq_guide(allowed, reason)
 
+    # Actions that need a verified speaker. Disabling the buttons is not enough:
+    # a key binding does not consult widget.disabled, so 'r' and 'w' reached the
+    # EQ path with the controls greyed out and the tab locked.
+    EQ_ACTIONS: ClassVar = frozenset({"read", "preview", "save_profile", "delete_profile"})
+
+    def check_action(self, action: str, parameters: tuple[object, ...]) -> bool | None:
+        return not (action in self.EQ_ACTIONS and not self._eq_access_allowed())
+
     def _reload_user_profiles(self) -> None:
         try:
             self._user_profiles = load_user_profiles()
@@ -446,11 +461,16 @@ class OpenJBLApp(App[None]):
     def _dangerous_profile(self) -> bool:
         """Whether what is on screen needs the extended-gain confirmation.
 
-        Keyed on boosts in the actual gains, not on LAB membership: the gain
-        field is free text, so typing +24 dB under a STANDARD profile must still
-        be confirmed, while a LAB profile that only cuts must not be -- labelling
-        a deep cut "DANGER" is crying wolf, and it is exactly what makes people
-        stop reading the real warnings.
+        Keyed on the actual gains, not on LAB membership: the gain field is free
+        text, so typing +24 dB under a STANDARD profile must still be confirmed,
+        while a LAB profile that only cuts must not be -- labelling a deep cut
+        "DANGER" is crying wolf, and that is what makes people stop reading the
+        real warnings.
+
+        The cuts-are-free exemption only applies where a gain is a dB value the
+        DSP applies. On the level-index encoders it is an index into a firmware
+        table, so -100 is not "very quiet", it is a table entry that does not
+        exist -- there, magnitude in either direction is what matters.
         """
         try:
             if self._profile(self._profile_key()).boosts_past_standard:
@@ -458,9 +478,25 @@ class OpenJBLApp(App[None]):
         except ValueError:
             pass
         try:
-            return any(gain > STANDARD_MAX_GAIN_DB for gain in self._gains())
+            gains = self._gains()
         except ValueError:
             return False
+        if not self._gains_are_decibels():
+            return any(abs(gain) > STANDARD_MAX_GAIN_DB for gain in gains)
+        return any(gain > STANDARD_MAX_GAIN_DB for gain in gains)
+
+    def _gains_are_decibels(self) -> bool:
+        """Whether this model's wire value is a dB gain rather than a table index.
+
+        Only the float-parametric encoders carry a real dB value; EQ_BALANCE and
+        PRESET_EQ models send a level index, and reasoning about clipping does not
+        transfer to those.
+        """
+        try:
+            features = set(get_model(self._pid()).get("features", []))
+        except (ValueError, KeyError):
+            return False
+        return "7_BANDS_EQ" in features or "PROTOCOL_4" in features
 
     def _update_eq_guide(self, allowed: bool | None = None, reason: str = "") -> None:
         permitted = self._eq_access_allowed() if allowed is None else allowed
@@ -535,8 +571,11 @@ class OpenJBLApp(App[None]):
 
     def _profile_key(self) -> str:
         value = self.query_one("#profile", Select).value
-        if value is Select.BLANK:
-            raise ValueError("select a sound profile")
+        if value is Select.BLANK or value == EMPTY_TIER_KEY:
+            # Guarded here, where it is consumed. Producing the sentinel is fine;
+            # letting it escape as a profile key is what raised ValueError out of
+            # the Textual message pump and killed the app on the next PID change.
+            raise ValueError("no sound profile is selected; save one or switch tier")
         return str(value)
 
     def _gains(self) -> list[float]:
@@ -550,6 +589,19 @@ class OpenJBLApp(App[None]):
         self.settings.last_address = self.query_one("#address", Input).value.strip()
         self.settings.last_pid = self._pid()
         self.settings.save()
+
+    def _reload_current_profile(self) -> None:
+        """Re-resolve whatever profile is selected, if one actually is.
+
+        An empty MY PROFILES tier parks the dropdown on a sentinel that is not a
+        profile. Callers on the PID-change path have no profile to reload then,
+        and must not raise out of the Textual message pump for it.
+        """
+        try:
+            key = self._profile_key()
+        except ValueError:
+            return
+        self._load_profile(key)
 
     def _load_profile(self, key: str) -> None:
         pid = self._pid()
@@ -594,7 +646,7 @@ class OpenJBLApp(App[None]):
             # is posted, so waiting for it would leave the previous model's gains
             # paired with this PID -- and it posts nothing at all when the value
             # is unchanged, which would leave the curve stale forever.
-            self._load_profile(self._profile_key())
+            self._reload_current_profile()
             model = str(detection["model"])
             confidence = str(detection["confidence"]).upper()
             reason = str(detection["reason"])
@@ -632,14 +684,14 @@ class OpenJBLApp(App[None]):
             pid = str(event.value)
             model = summarize_model(next(model for model in all_models() if str(model.get("pid")) == pid))
             self._status(protocol=f"PROFILE  {model['eq_path']}")
-            self._load_profile(self._profile_key())
+            self._reload_current_profile()
             self.log_message(f"MODEL   |  {model['name']}  |  PID {pid}  |  {model['eq_path']}")
         elif event.select.id == "profile-tier":
             tier = str(event.value)
             self._show_tier(tier)
             self.log_message(f"MODE    |  {TIER_LABELS[tier]}")
         elif event.select.id == "profile":
-            if str(event.value) != "none":
+            if str(event.value) != EMPTY_TIER_KEY:
                 self._load_profile(str(event.value))
 
     def _tier(self) -> str:
@@ -666,14 +718,17 @@ class OpenJBLApp(App[None]):
         if not options:
             # An empty saved list would leave Select with nothing to show, so say
             # how to fill it rather than presenting a dead dropdown.
-            profile_select.set_options([("No saved profiles yet", "none")])
-            profile_select.value = "none"
+            profile_select.set_options([(EMPTY_TIER_LABEL, EMPTY_TIER_KEY)])
+            profile_select.value = EMPTY_TIER_KEY
             self.query_one("#gains", Input).value = ""
             self.query_one("#curve", Static).update("CURVE  -  Build a curve, then press SAVE AS to keep it here")
             self.query_one("#profile-info", Static).update(
                 "MY PROFILES  /  Empty. Pick any profile, edit the gains, then SAVE AS to store it."
             )
-            self._reset_danger_arm()
+            # Not just the arm: the apply guide is whatever the previous tier left
+            # there, so an empty tier used to keep a DANGER warning on screen for
+            # a dropdown holding nothing at all.
+            self._update_profile_mode()
             return
         keys = [key for _, key in options]
         if select in keys:
@@ -896,8 +951,14 @@ class OpenJBLApp(App[None]):
             raise RuntimeError("the verified link is no longer up; re-verify the speaker")
         return link
 
-    @work(exclusive=True, group="eq")
+    @work(exclusive=True, group="read")
     async def read_worker(self) -> None:
+        """Its own group, not the write group.
+
+        Sharing "eq" with apply_worker meant pressing 'r' cancelled an apply that
+        already had a frame on the wire but had not read back yet -- one keystroke
+        defeating the readback evidence the whole apply path exists to produce.
+        """
         try:
             link = self._verified_link()
             path, frames = auto_read_frames(self._pid())
@@ -1080,10 +1141,24 @@ class OpenJBLApp(App[None]):
             )
             self._status(system=f"WRITE TX {transaction_id}", protocol=f"{path} | SENDING")
             ack_error = False
+            authorised_generation = link.generation
             for index, frame in enumerate(frames, 1):
+                # Re-checked per frame, not once at the top. Authorisation is
+                # against a specific link; if it dropped and came back mid-write
+                # the revocation has already happened, and continuing to write
+                # would defeat the mechanism that exists to stop exactly this.
+                if link.generation != authorised_generation:
+                    raise RuntimeError(
+                        f"the link was rebuilt after frame {index - 1}/{len(frames)}; "
+                        "the write was not completed over the link it was verified against"
+                    )
                 self.log_message(f"WRITE   |  TX {index}/{len(frames)}  |  {hex_bytes(frame)}")
-                transaction = await link.transact(frame, self.settings.timeout)
+                # Counted before the await, not after. transact() puts the frame
+                # on the wire and only then waits for a reply, so counting on
+                # return meant a timeout or a cancellation recorded applied=false
+                # for bytes the speaker had already received.
                 frames_written += 1
+                transaction = await link.transact(frame, self.settings.timeout)
                 reconnects += transaction.reconnects
                 write_replies.extend(transaction.replies)
                 self.log_message(
@@ -1113,7 +1188,12 @@ class OpenJBLApp(App[None]):
                     except ValueError as exc:
                         self.log_message(f"STATE   |  undecodable: {exc}")
             verification = verify_eq_readback(gains, read_replies)
+            # Three states, not two. "mismatch" means we decoded the pre-state and
+            # it differed; "verified" means it already matched; anything else means
+            # we never decoded it and know nothing -- which must not be reported as
+            # having matched.
             changed = precheck.status == "mismatch" and verification.verified
+            already_matched = precheck.verified and verification.verified
             elapsed_ms = round((time.perf_counter() - started) * 1000)
             self.log_message(
                 f"VERIFY  |  {verification.status.upper()}  |  source={verification.source}\n"
@@ -1158,9 +1238,15 @@ class OpenJBLApp(App[None]):
                 elif changed:
                     outcome = "CHANGED + VERIFIED"
                     detail = "The pre-write state was different."
-                else:
+                elif already_matched:
                     outcome = "ALREADY MATCHED + VERIFIED"
                     detail = "The requested state already matched."
+                else:
+                    # The readback proves where the speaker ended up, but the
+                    # pre-state never decoded, so whether this write changed
+                    # anything is simply unknown. Say that instead of guessing.
+                    outcome = "WROTE + VERIFIED (prior state unknown)"
+                    detail = f"The pre-write state could not be read ({precheck.status}), so the change is unconfirmed."
                 self._status(system="WRITE VERIFIED", protocol=f"{path} | {outcome}")
                 self.notify(
                     f"Write response received; every EQ band matched read-back. {detail}",

@@ -769,9 +769,17 @@ def curve_from_model_gains(pid: str, gains: Sequence[float]) -> tuple[float, ...
     """
     if not gains:
         raise ValueError("cannot build a profile from an empty gain list")
-    frequencies = _model_frequencies(pid, len(gains))
-    if len(frequencies) != len(gains):
-        raise ValueError(f"PID {pid} declares {len(frequencies)} bands, not {len(gains)}")
+    # Against the model's declared band count, not against len(gains). Asking
+    # _model_frequencies for len(gains) frequencies and then checking it returned
+    # len(gains) of them is a tautology: it made a three-value list on a
+    # seven-band speaker pass, and four bands the user never typed got invented
+    # by the interpolator and later written to hardware.
+    count = gain_count_for_pid(pid)
+    if count == 0:
+        raise ValueError(f"PID {pid} has no EQ controls declared by the APK")
+    if len(gains) != count:
+        raise ValueError(f"PID {pid} has {count} bands; received {len(gains)} gains")
+    frequencies = _model_frequencies(pid, count)
     if len(gains) == 1:
         return tuple(float(gains[0]) for _ in REFERENCE_FREQUENCIES)
     return tuple(round(_interpolate_at(frequencies, gains, value), 3) for value in REFERENCE_FREQUENCIES)

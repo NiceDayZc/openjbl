@@ -6,9 +6,12 @@ appear negative in JADX are represented here as their 0..255 equivalents.
 
 from __future__ import annotations
 
+import json
 import struct
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
+from functools import lru_cache
+from importlib.resources import files
 
 IDENTIFIER = 0xAA
 
@@ -351,12 +354,41 @@ def set_parametric_eq(active_category: int, bands: Sequence[ParametricBand], sam
     return LegacyFrame(SET_ADVANCED_EQ, payload, long_length=True).encode()
 
 
+@lru_cache(maxsize=1)
+def custom_c2_shape() -> tuple[tuple[int, float, float], ...]:
+    """The Charge 6 custom-EQ band table, read from the APK's own asset.
+
+    Restating this table in Python is how it drifted: the shelves were written as
+    Q=0.7 while custom_c2_eq.json ships 0.707, so both shelf bands went to real
+    hardware with a slope the app never sends -- on the extended-gain path too.
+    Reading the asset means the table cannot disagree with the app by hand.
+    """
+    path = files("openjbl").joinpath("data/custom_c2_eq.json")
+    entries = json.loads(path.read_text(encoding="utf-8"))
+    params = next(entry for entry in entries if str(entry.get("categoryId")).upper() == "CUSTOM")["params"]
+    shape = []
+    for param in params:
+        key = str(param["type"]).replace("_FILTER", "").replace("PEAKING_EQ", "PEAKING").lower()
+        shape.append((FILTER_TYPES[key], float(param["frequency"]), float(param["qValue"])))
+    return tuple(shape)
+
+
+def _charge6_bands(gains: Sequence[float]) -> list[ParametricBand]:
+    shape = custom_c2_shape()
+    if len(gains) != len(shape):
+        raise ValueError(f"Charge 6 requires exactly {len(shape)} gains")
+    return [
+        ParametricBand(kind, float(gain), frequency, q)
+        for (kind, frequency, q), gain in zip(shape, gains, strict=True)
+    ]
+
+
 def charge6_bands(gains: Sequence[float]) -> list[ParametricBand]:
     """Build the custom-EQ shape exposed by the Charge 6 UI.
 
     Band 1 uses 0.5 dB positive steps and 0.75 dB negative steps (-9..+6).
-    Bands 2..7 use 0.5 dB steps (-6..+6). Frequency and Q are fixed to
-    the custom C2 values shipped in charge6_preset_eq/custom_c2_eq.
+    Bands 2..7 use 0.5 dB steps (-6..+6). Frequency and Q come from the custom C2
+    table the APK ships.
     """
     if len(gains) != 7:
         raise ValueError("Charge 6 requires exactly 7 gains")
@@ -370,26 +402,19 @@ def charge6_bands(gains: Sequence[float]) -> list[ParametricBand]:
         value = float(value)
         if not -6.0 <= value <= 6.0 or abs(value * 2 - round(value * 2)) > 1e-6:
             raise ValueError("Charge 6 bands 2..7 must be -6..+6 dB in 0.5 dB steps")
-    frequencies = (125.0, 250.0, 500.0, 1000.0, 2000.0, 4000.0, 8000.0)
-    kinds = (0, 1, 1, 1, 1, 1, 2)
-    q_values = (0.7, 2.0, 2.0, 2.0, 2.0, 2.0, 0.7)
-    return [
-        ParametricBand(kind, float(gain), frequency, q)
-        for kind, gain, frequency, q in zip(kinds, gains, frequencies, q_values, strict=True)
-    ]
+    return _charge6_bands(gains)
 
 
 def charge6_extended_bands(gains: Sequence[float]) -> list[ParametricBand]:
-    """Build the confirmed Charge 6 band shape with expert gains up to +/-24 dB."""
+    """The Charge 6 band shape with expert gains up to +/-24 dB.
+
+    Same frequencies, filter kinds and Q values as charge6_bands -- only the step
+    grid and the UI's -9..+6 / -6..+6 bounds are lifted. ParametricBand.validate()
+    still holds the +/-24 dB line.
+    """
     if len(gains) != 7:
         raise ValueError("Charge 6 requires exactly 7 gains")
-    frequencies = (125.0, 250.0, 500.0, 1000.0, 2000.0, 4000.0, 8000.0)
-    kinds = (0, 1, 1, 1, 1, 1, 2)
-    q_values = (0.7, 2.0, 2.0, 2.0, 2.0, 2.0, 0.7)
-    return [
-        ParametricBand(kind, float(gain), frequency, q)
-        for kind, gain, frequency, q in zip(kinds, gains, frequencies, q_values, strict=True)
-    ]
+    return _charge6_bands(gains)
 
 
 def parse_parametric_eq(payload: bytes, *, protocol4_layout: bool = False) -> dict:

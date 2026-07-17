@@ -1,5 +1,7 @@
 import subprocess
 
+import pytest
+
 from openjbl import updater
 
 
@@ -55,3 +57,43 @@ def test_update_now_installs_available_release(monkeypatch):
         lambda version: updater.UpdateResult("0.2.2", version, "installed", "done", True),
     )
     assert updater.update_now().installed
+
+
+def test_auto_update_never_installs(monkeypatch):
+    """Installing unpinned PyPI code at launch turns one account compromise into
+    code execution on every machine, and pip rewrites site-packages under a
+    process that is about to drive a radio. The check reports; the user installs.
+    """
+    installed = []
+    monkeypatch.setattr(updater, "is_editable_install", lambda: False)
+    monkeypatch.setattr(updater, "fetch_latest_version", lambda timeout=5.0: "99.0.0")
+    monkeypatch.setattr(updater, "install_version", lambda *a, **k: installed.append(a) or None)
+
+    result = updater.auto_update()
+    assert result.status == "update-available"
+    assert result.installed is False
+    assert installed == [], "auto_update must not install"
+    assert "openjbl update" in result.message, "it has to say how to install deliberately"
+
+
+def test_auto_update_is_off_by_default():
+    from openjbl.config import Settings
+
+    assert Settings().auto_update is False
+
+
+def test_install_version_validates_the_string_it_actually_passes_to_pip(monkeypatch):
+    """_version_key strips before matching, so validation and use must not diverge."""
+    seen = []
+
+    class Completed:
+        returncode = 0
+        stdout = stderr = ""
+
+    monkeypatch.setattr(updater.subprocess, "run", lambda cmd, **k: seen.append(cmd) or Completed())
+    updater.install_version("  1.2.3  ")
+    assert seen[0][-1] == "openjbl==1.2.3", "the argv must carry the validated value"
+
+    for bad in ("1.0.0; rm -rf /", "1.0.0 --index-url http://evil", "$(whoami)", "1.0.0\n--extra-index-url=http://x"):
+        with pytest.raises(ValueError):
+            updater.install_version(bad)
