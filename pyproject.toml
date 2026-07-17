@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "openjbl"
-version = "0.2.5"
+version = "0.3.0"
 description = "OpenJBL: safe JBL Portable Bluetooth protocol, EQ, CLI, and TUI toolkit"
 readme = "README.md"
 license = "MIT"
@@ -25,11 +25,6 @@ dependencies = [
   "pyserial>=3.5,<4",
   "textual>=8.2,<9",
 ]
-
-[project.urls]
-Homepage = "https://github.com/NiceDayZc/openjbl"
-Repository = "https://github.com/NiceDayZc/openjbl.git"
-Issues = "https://github.com/NiceDayZc/openjbl/issues"
 
 [project.optional-dependencies]
 dev = [
