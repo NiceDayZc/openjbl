@@ -25,6 +25,24 @@ route, and opens the Equalizer. Pick a profile, press **APPLY TO SPEAKER**.
 Close JBL Portable on any phone nearby first, or it will compete for the
 connection.
 
+Prefer a desktop window? The GUI is the same verified path with a black-and-white
+shadcn/ui front end, a live response curve drawn from the speaker's real filters,
+and per-band sliders:
+
+```powershell
+python -m pip install "openjbl[gui]"
+openjbl-gui
+```
+
+![OpenJBL GUI: profile picker, live response curve and band-by-band read-back](docs/assets/openjbl-gui.png)
+
+It opens in your browser at `http://127.0.0.1:47800/` (the next free port if that one is taken; the Terminal window prints the address). The server listens on
+loopback only, and every API call needs a per-launch token that only the page it
+served can read, so other sites open in the same browser cannot reach the speaker.
+On macOS, start it from Terminal (or `run-openjbl-gui.command`) so the system can
+grant Bluetooth access. Run one of the TUI or the GUI at a time: both hold the
+speaker's link.
+
 Prefer the command line?
 
 ```powershell
@@ -40,7 +58,7 @@ openjbl set-profile --pid 20e3 bass --address DEVICE --apply
 |---|---|
 | **Discovery** | BLE scan with automatic JBL model/PID detection from Harman advertisement bytes, service UUIDs, names, and Windows paired metadata |
 | **Protocols** | Legacy simple, advanced-level and parametric EQ; Protocol 4 `0E02` parametric; Grip-style `0E7F` quantized. Routed automatically from the PID across 37 catalogued models |
-| **Profiles** | 87 curves in three tiers, plus your own saved ones |
+| **Profiles** | 18 curated curves, one per job, plus your own saved ones |
 | **Evidence** | Read-back verification, per-band comparison, protocol acknowledgement checks, and JSONL audit logs |
 | **Transports** | BLE GATT, and Bluetooth Classic SPP over a COM port |
 
@@ -82,17 +100,20 @@ failure stage. Audit records store a hash of the target, not its address.
 
 Run `openjbl profiles` for the full list, or see [Sound profiles](docs/PROFILES.md).
 
-**24 standard** -- inside each model's own UI range, so they need no confirmation:
-Flat, Balanced, Bass Heavy, Deep Bass, Punch Bass, Warm, Loudness, Crystal
-Clear, Bright, Detail Monitor, Vocal, Podcast, Acoustic, Rock, Metal, Hip-Hop,
-EDM, Pop, Jazz, Classical, Cinema, Gaming, Outdoor, Night.
+**5 standard** -- inside each model's own UI range, so they work on every EQ
+model and need no confirmation: Flat, Balanced, Bass Heavy, Vocal Focus, Outdoor.
 
-**63 LAB** -- up to +/-24 dB, needing `--allow-extended`. Most spend that range on
-cuts, which is what it is good for. A large boost has to come out of the DSP's
-headroom and the speaker's limiter, so it distorts and then gets quieter; a cut
-costs level, which the volume knob gives back. The bass family leaves 125 Hz at
-0 dB and lowers everything above it -- the tilt is what the ear hears as bass.
-The 18 that do boost are labelled `DANGER` and need a second confirmation.
+**13 LAB** -- beyond the UI range, needing `--allow-extended`. A room family of
+published in-room targets: Harman Room Curve, Harman Listener Target (Olive
+2013), B&K House Curve (1974), Music Studio Room (Dolby Atmos Music), Cinema
+X-Curve (SMPTE ST 202) and Vocal Bloom Room. Then one per job: Hi-Fi Clarity,
+Deep Clean Bass, Vocal Presence, Cinema Dialogue, Podcast & Speech, Gaming
+Footsteps, Late Night. All of them only cut. A large
+boost has to come out of the DSP's headroom and the speaker's limiter, so it
+distorts and then gets quieter; a cut costs level, which the volume knob gives
+back. Each curve was fitted against the Charge 6's real filter chain rather than
+picked band by band. A boost typed in by hand is labelled `DANGER` and needs a
+second confirmation.
 
 **My profiles** -- edit the gains, press `SAVE AS`, name it. Stored as a
 seven-point tonal curve, so a profile saved on one speaker still means something
@@ -216,6 +237,23 @@ py -m venv .venv
 .venv\Scripts\Activate.ps1
 python -m pip install -e ".[dev]"
 ```
+
+The GUI's front end lives in `gui/` (Vite, React, Tailwind, shadcn/ui). The built
+page is committed under `src/openjbl/web/`, so installing the package needs no
+Node toolchain. To change it:
+
+```powershell
+cd gui
+npm install
+npm run build        # writes src/openjbl/web/
+```
+
+For live reload, run `openjbl-gui --no-browser` with `OPENJBL_GUI_TOKEN` set, and
+`npm run dev` in `gui/` with the same value in `VITE_OPENJBL_TOKEN`.
+
+`tests/test_gui_e2e.py` opens the built page in headless Chrome and clicks through
+it against a simulated speaker. It needs `python -m pip install -e ".[e2e]"` and
+Google Chrome, and skips itself without them.
 
 ## Documentation
 

@@ -39,8 +39,8 @@ def test_cli_profile_is_model_aware_and_dry_run(capsys):
 
 def test_cli_lab_profile_requires_explicit_unlock(capsys):
     with pytest.raises(SystemExit, match="allow-extended"):
-        main(["set-profile", "--pid", "20e3", "lab-test-8k"])
-    main(["set-profile", "--pid", "20e3", "lab-test-8k", "--allow-extended"])
+        main(["set-profile", "--pid", "20e3", "lab-night"])
+    main(["set-profile", "--pid", "20e3", "lab-night", "--allow-extended"])
     output = capsys.readouterr().out
-    assert "Gains: 0 0 0 0 0 0 24" in output
+    assert "Gains: -19 -1 -0.5 0 0 0 -1" in output
     assert "DRY-RUN" in output

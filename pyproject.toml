@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "openjbl"
 version = "0.3.0"
-description = "OpenJBL: safe JBL Portable Bluetooth protocol, EQ, CLI, and TUI toolkit"
+description = "OpenJBL: safe JBL Portable Bluetooth protocol, EQ, CLI, TUI, and GUI toolkit"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
@@ -27,7 +27,15 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+gui = [
+  "aiohttp>=3.9,<4",
+]
+# Browser-driven GUI tests; they run against an installed Google Chrome.
+e2e = [
+  "playwright>=1.45,<2",
+]
 dev = [
+  "aiohttp>=3.9,<4",
   "bandit>=1.8,<2",
   "build>=1.2,<2",
   "mypy>=1.17,<2",
@@ -43,12 +51,13 @@ dev = [
 [project.scripts]
 openjbl = "openjbl.cli:main"
 openjbl-tui = "openjbl.tui:main"
+openjbl-gui = "openjbl.gui:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.package-data]
-openjbl = ["data/*.json", "py.typed"]
+openjbl = ["data/*.json", "py.typed", "web/*.html", "web/assets/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

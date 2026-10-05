@@ -134,9 +134,13 @@ async def test_tui_locks_eq_until_connection_is_verified(monkeypatch):
         assert "BASS HEAVY" in str(app.query_one("#profile-info", Static).render())
         app.query_one("#profile-tier", Select).value = "lab"
         await pilot.pause()
-        assert app.query_one("#profile", Select).value == "lab-max-bass"
-        assert app.query_one("#gains", Input).value == "24, 16, 4, -8, -12, -8, -2"
-        assert "DANGER" in str(app.query_one("#profile-info", Static).render())
+        assert app.query_one("#profile", Select).value == "lab-harman-room"
+        assert app.query_one("#gains", Input).value == "0, -2, -5, -6, -7, -8, -10"
+        assert "DANGER" not in str(app.query_one("#profile-info", Static).render()), "a deep cut is not a danger"
+        assert str(app.query_one("#apply").label) == "APPLY TO SPEAKER"
+        app.query_one("#gains", Input).value = "24, 16, 4, -8, -12, -8, -2"
+        await pilot.pause()
+        assert "DANGER" in str(app.query_one("#eq-guide", Static).render())
         assert str(app.query_one("#apply").label) == "APPLY DANGEROUS PROFILE"
         app.apply_eq()
         await pilot.pause()
@@ -269,7 +273,7 @@ async def test_a_speaker_that_clamps_the_gains_is_reported_as_a_mismatch():
         app._set_eq_access(True, "test connection verified")
         app.query_one("#profile-tier", Select).value = "lab"
         await pilot.pause()
-        app.query_one("#profile", Select).value = "lab-max-bass"  # asks for +24 at 125 Hz
+        app.query_one("#gains", Input).value = "24, 16, 4, -8, -12, -8, -2"  # asks for +24 at 125 Hz
         await pilot.pause()
         app.apply_eq()  # arms
         await pilot.pause()

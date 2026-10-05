@@ -31,3 +31,6 @@ audit*.jsonl
 .vscode/
 .DS_Store
 Thumbs.db
+
+# GUI front-end toolchain; the built page under src/openjbl/web is shipped.
+gui/node_modules/

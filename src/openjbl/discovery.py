@@ -208,3 +208,33 @@ async def windows_paired_jbl() -> list[dict[str, Any]]:
         if row is not None:
             found[(str(row["address"]), str(row["jbl_detection"]["pid"]))] = row
     return list(found.values())
+
+
+# Below this the link is too weak to verify reliably, so auto-setup asks rather
+# than picking a speaker the user then cannot diagnose. Ours: the app has no
+# auto-select and therefore no floor to copy.
+AUTO_SELECT_RSSI_FLOOR = -85
+# Two speakers within this margin are a coin toss; show the table instead.
+AUTO_SELECT_MARGIN_DB = 6
+
+
+def pick_auto_candidate(rows: list[dict[str, Any]]) -> tuple[dict[str, Any] | None, str]:
+    """Pick the speaker to set up automatically, or decline and say why.
+
+    Auto-setup that picks the wrong speaker is worse than one that asks, so
+    a weak signal or a near-tie declines rather than guessing.
+    """
+    live = [
+        row
+        for row in rows
+        if row["jbl_detection"]["pid"] and row.get("live", row["rssi"] is not None) and row["rssi"] is not None
+    ]
+    if not live:
+        return None, "no live JBL with a resolved PID was advertising"
+    ranked = sorted(live, key=lambda row: -int(row["rssi"]))
+    best = ranked[0]
+    if int(best["rssi"]) < AUTO_SELECT_RSSI_FLOOR:
+        return None, f"the strongest JBL is only {best['rssi']} dBm, too weak to verify reliably"
+    if len(ranked) > 1 and int(best["rssi"]) - int(ranked[1]["rssi"]) < AUTO_SELECT_MARGIN_DB:
+        return None, f"{len(ranked)} JBL speakers are within {AUTO_SELECT_MARGIN_DB} dB; pick one from the table"
+    return best, f"{best['rssi']} dBm, clear of the runner-up"

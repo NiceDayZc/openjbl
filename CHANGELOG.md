@@ -4,6 +4,22 @@ All notable changes follow Keep a Changelog style. This project uses semantic ve
 
 ## [Unreleased]
 
+### Added
+
+- **`openjbl-gui`: a desktop GUI in the browser.** A black-and-white shadcn/ui front end (`pip install "openjbl[gui]"`) over the same verified write path as the TUI: the equalizer stays locked until a live link answers with a supported EQ response, every write is read back band by band, and a boost past +6 dB needs an explicit confirmation. It draws the response of the speaker's real filter chain as you drag the per-band sliders, overlays what the speaker reports on a read, and shows the per-band read-back after each write. The server binds to 127.0.0.1 only, and every API call must carry a per-launch token embedded in the page it served and name a loopback Host, so neither another site in the same browser nor a DNS-rebinding page can drive the speaker.
+- **A room family of LAB curves around Harman Room Curve.** Five more published in-room targets, each the sound of a kind of room: Harman Listener Target (Olive, Welti & McMullin 2013 -- the listening test behind the Harman curve), B&K House Curve (1974 hi-fi room), Music Studio Room (Dolby Atmos Music target), Cinema X-Curve (SMPTE ST 202, large room) and Vocal Bloom Room (Archimago 2026). Fitted the same way as the other LAB curves; Toole's reflective-room estimate was left out because it lands within a dB of B&K.
+
+### Fixed
+
+- **The GUI could not connect a speaker that did not advertise its model.** A Charge 6 that is paired to a phone sends only a Fast Pair frame and the name `JBLSBIC`, so detection has no PID; auto-setup rightly declines, but the page then offered a disabled Connect button and no way out. Such a speaker now gets a model picker, defaulting to the last model used, and the read-only probe that follows still refuses anything that is not that model. The device list shows JBL speakers only, with the rest one click away.
+- **The GUI's default port moved from 8765 to 47800.** 8765 is a common development port; when it was taken the server moved to the next free one, but the documented address then pointed at someone else's server.
+
+### Changed
+
+- **The write transaction moved to `openjbl.eqwrite`** so the TUI and the GUI run one implementation of the path that changes hardware, and auto speaker selection moved to `discovery.pick_auto_candidate`. TUI behaviour is unchanged.
+- **The profile catalog is curated down from 88 curves to 13, one per job.** Five standard profiles (Flat, Balanced, Bass Heavy, Vocal Focus, Outdoor) cover every EQ model at full volume. Eight cut-only LAB profiles cover the jobs: Harman Room Curve, Hi-Fi Clarity, Deep Clean Bass, Vocal Presence, Cinema Dialogue, Podcast & Speech, Gaming Footsteps and Late Night. The 18 bench-test boosts of +18 to +24 dB are gone -- the extended range distorts on a boost, which is why the cut-based curves were added in the first place -- along with genre presets and overlapping variants of the same tilt. A boost typed into the gain field is still accepted behind the DANGER confirmation.
+- **The six new LAB curves were fitted, not hand-picked.** Each started as a continuous target response, and its gains were solved for against the Charge 6's real filter chain (125 Hz low shelf, Q2 peaks at 250 Hz-4 kHz, 8 kHz high shelf, 48 kHz), then rounded to 0.5 dB. Q2 peaks an octave apart ripple by 2-3 dB between centres when several are cut together, so a curve chosen band by band is not the response that ships. `docs/PROFILES.md` now lists the computed response at the in-between frequencies too.
+
 A whole-system adversarial audit raised 46 findings; 29 survived refutation. 0.3.0 was built but never published, so nothing below ever reached a user.
 
 ### Security

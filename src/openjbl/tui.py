@@ -6,9 +6,6 @@ import asyncio
 import contextlib
 import json
 import time
-import uuid
-from dataclasses import dataclass
-from datetime import datetime, timezone
 from typing import Any, ClassVar
 
 from textual import work
@@ -29,9 +26,11 @@ from textual.widgets import (
 )
 
 from . import __build_id__, __version__
-from .audit import append_audit, target_fingerprint
+from .audit import append_audit
 from .config import Settings
 from .connection import ConnectionManager, Link
+from .discovery import pick_auto_candidate
+from .eqwrite import WriteRequest, apply_verified_write
 from .models import all_models, auto_eq_frames, auto_read_frames, gain_count_for_pid, get_model, summarize_model
 from .presets import (
     STANDARD_MAX_BOOST_DB,
@@ -54,15 +53,8 @@ from .userprofiles import (
     save_user_profile,
     user_profile_options,
 )
-from .verification import verify_eq_readback
 
 MODEL_OPTIONS = [(f"{model.get('deviceName')} / {model.get('pid')}", str(model.get("pid"))) for model in all_models()]
-# Below this the link is too weak to verify reliably, so auto-setup asks rather
-# than picking a speaker the user then cannot diagnose. Ours: the app has no
-# auto-select and therefore no floor to copy.
-AUTO_SELECT_RSSI_FLOOR = -85
-# Two speakers within this margin are a coin toss; show the table instead.
-AUTO_SELECT_MARGIN_DB = 6
 # No standard profile resolves above this on any model in the APK database, so a
 # value beyond it was hand-entered and gets the extended-gain confirmation --
 # whichever profile happens to be selected in the dropdown. On dB models only a
@@ -123,26 +115,6 @@ class NamePrompt(ModalScreen[str | None]):
             self.dismiss(self.query_one("#prompt-name", Input).value.strip() or None)
         else:
             self.dismiss(None)
-
-
-@dataclass(frozen=True)
-class WriteRequest:
-    """Identity and gains resolved once, before any widget can change under us.
-
-    Reading #pid and #gains separately on the write path is unsafe: Select.Changed
-    is posted, not called, so a programmatically selected PID can pair with the
-    previous model's gains and write the wrong shape to real hardware.
-    """
-
-    address: str
-    pid: str
-    profile: str
-    gains: list[float]
-    # Opting in to the LAB encoder and needing confirmation are different things:
-    # a hand-typed 24 dB on a STANDARD profile needs the confirmation but must
-    # still meet the model's own step and range limits.
-    allow_extended: bool
-    dangerous: bool
 
 
 class OpenJBLApp(App[None]):
@@ -825,25 +797,7 @@ class OpenJBLApp(App[None]):
         return rows
 
     def _auto_candidate(self, rows: list[dict[str, Any]]) -> tuple[dict[str, Any] | None, str]:
-        """Pick the speaker to set up automatically, or decline and say why.
-
-        Auto-setup that picks the wrong speaker is worse than one that asks, so
-        a weak signal or a near-tie declines rather than guessing.
-        """
-        live = [
-            row
-            for row in rows
-            if row["jbl_detection"]["pid"] and row.get("live", row["rssi"] is not None) and row["rssi"] is not None
-        ]
-        if not live:
-            return None, "no live JBL with a resolved PID was advertising"
-        ranked = sorted(live, key=lambda row: -int(row["rssi"]))
-        best = ranked[0]
-        if int(best["rssi"]) < AUTO_SELECT_RSSI_FLOOR:
-            return None, f"the strongest JBL is only {best['rssi']} dBm, too weak to verify reliably"
-        if len(ranked) > 1 and int(best["rssi"]) - int(ranked[1]["rssi"]) < AUTO_SELECT_MARGIN_DB:
-            return None, f"{len(ranked)} JBL speakers are within {AUTO_SELECT_MARGIN_DB} dB; pick one from the table"
-        return best, f"{best['rssi']} dBm, clear of the runner-up"
+        return pick_auto_candidate(rows)
 
     async def _verify(self, address: str, pid: str) -> dict[str, Any]:
         """Connect, hold the link open, and verify the EQ route over it.
@@ -1096,199 +1050,14 @@ class OpenJBLApp(App[None]):
 
     @work(exclusive=True, group="eq")
     async def apply_worker(self, request: WriteRequest) -> None:
-        transaction_id = uuid.uuid4().hex[:8].upper()
-        started = time.perf_counter()
-        address, pid, gains = request.address, request.pid, request.gains
-        path = "unknown"
-        frames: list[bytes] = []
-        write_replies: list[bytes] = []
-        read_frames: list[bytes] = []
-        precheck_replies: list[bytes] = []
-        read_replies: list[bytes] = []
-        frames_written = 0
-        reconnects = 0
         try:
             link = self._verified_link()
-            path, frames = auto_eq_frames(pid, gains, allow_extended=request.allow_extended)
-            read_path, read_frames = auto_read_frames(pid)
             self._save_context()
-            target = target_fingerprint(address)
-            timestamp = datetime.now(timezone.utc).isoformat(timespec="milliseconds")
-            self._status(system=f"WRITE TX {transaction_id}", protocol=f"{path} | SENDING")
-            self.log_message(
-                f"\nTXN     |  {transaction_id}  |  BEGIN {timestamp}\n"
-                f"TARGET  |  hash={target}  |  PID={pid}  |  profile={request.profile}  |  "
-                f"dangerous={request.dangerous}\n"
-                f"ROUTE   |  write={path}  |  readback={read_path}\n"
-                f"REQUEST |  gains={gains}  |  frames={len(frames)}"
+            outcome = await apply_verified_write(
+                link, request, timeout=self.settings.timeout, log=self.log_message, status=self._status
             )
-            self._status(system=f"PRECHECK {transaction_id}", protocol=f"{read_path} | READING BEFORE")
-            for index, frame in enumerate(read_frames, 1):
-                self.log_message(f"PRECHECK|  TX {index}/{len(read_frames)}  |  {hex_bytes(frame)}")
-                transaction = await link.transact(frame, self.settings.timeout)
-                precheck_replies.extend(transaction.replies)
-                self.log_message(f"PRECHECK|  RX {index}/{len(read_frames)}  |  {len(transaction.replies)} frame(s)")
-            # Snapshot taken before the first write is issued, and never recomputed.
-            # Re-reading it after an attempt that already landed would report the
-            # write as "already matched" when it was this write that changed things.
-            precheck = verify_eq_readback(gains, precheck_replies)
-            self.log_message(
-                f"BEFORE  |  status={precheck.status}  |  actual={precheck.actual}  |  delta={precheck.deltas}"
-            )
-            self._status(system=f"WRITE TX {transaction_id}", protocol=f"{path} | SENDING")
-            ack_error = False
-            authorised_generation = link.generation
-            for index, frame in enumerate(frames, 1):
-                # Re-checked per frame, not once at the top. Authorisation is
-                # against a specific link; if it dropped and came back mid-write
-                # the revocation has already happened, and continuing to write
-                # would defeat the mechanism that exists to stop exactly this.
-                if link.generation != authorised_generation:
-                    raise RuntimeError(
-                        f"the link was rebuilt after frame {index - 1}/{len(frames)}; "
-                        "the write was not completed over the link it was verified against"
-                    )
-                self.log_message(f"WRITE   |  TX {index}/{len(frames)}  |  {hex_bytes(frame)}")
-                # Counted before the await, not after. transact() puts the frame
-                # on the wire and only then waits for a reply, so counting on
-                # return meant a timeout or a cancellation recorded applied=false
-                # for bytes the speaker had already received.
-                frames_written += 1
-                transaction = await link.transact(frame, self.settings.timeout)
-                reconnects += transaction.reconnects
-                write_replies.extend(transaction.replies)
-                self.log_message(
-                    f"WRITE   |  RX {index}/{len(frames)}  |  {len(transaction.replies)} frame(s)  |  "
-                    f"attempts={transaction.attempts}  reconnects={transaction.reconnects}"
-                )
-                for reply in transaction.replies:
-                    self.log_message(f"ACK RAW |  {hex_bytes(reply)}")
-                    try:
-                        decoded = describe_frame(reply)
-                        ack_error = ack_error or decoded.get("command") == 0xEE
-                        self.log_message("ACK DEC |  " + json.dumps(decoded, ensure_ascii=False))
-                    except ValueError as exc:
-                        self.log_message(f"ACK DEC |  undecodable: {exc}")
-            ack = "REJECTED" if ack_error else ("RECEIVED" if write_replies else "MISSING")
-            self._status(system=f"VERIFYING {transaction_id}", protocol=f"{path} | ACK {ack}")
-            self.log_message(f"ACK     |  {ack}  |  total={len(write_replies)} frame(s)")
-            for index, frame in enumerate(read_frames, 1):
-                self.log_message(f"READBACK|  TX {index}/{len(read_frames)}  |  {hex_bytes(frame)}")
-                transaction = await link.transact(frame, self.settings.timeout)
-                read_replies.extend(transaction.replies)
-                self.log_message(f"READBACK|  RX {index}/{len(read_frames)}  |  {len(transaction.replies)} frame(s)")
-                for reply in transaction.replies:
-                    self.log_message(f"STATE   |  RAW {hex_bytes(reply)}")
-                    try:
-                        self.log_message("STATE   |  DEC " + json.dumps(describe_frame(reply), ensure_ascii=False))
-                    except ValueError as exc:
-                        self.log_message(f"STATE   |  undecodable: {exc}")
-            verification = verify_eq_readback(gains, read_replies)
-            # Three states, not two. "mismatch" means we decoded the pre-state and
-            # it differed; "verified" means it already matched; anything else means
-            # we never decoded it and know nothing -- which must not be reported as
-            # having matched.
-            changed = precheck.status == "mismatch" and verification.verified
-            already_matched = precheck.verified and verification.verified
-            elapsed_ms = round((time.perf_counter() - started) * 1000)
-            self.log_message(
-                f"VERIFY  |  {verification.status.upper()}  |  source={verification.source}\n"
-                f"EXPECT  |  {verification.expected}\n"
-                f"ACTUAL  |  {verification.actual}\n"
-                f"DELTA   |  {verification.deltas}\n"
-                f"RESULT  |  {verification.message}\n"
-                f"PROOF   |  ack={ack}  |  state_changed={changed}  |  before={precheck.status}  |  "
-                f"reconnects={reconnects}\n"
-                f"TXN     |  {transaction_id}  |  END  |  {elapsed_ms} ms"
-            )
-            append_audit(
-                "eq-apply",
-                address=address,
-                pid=pid,
-                applied=True,
-                details={
-                    "transaction_id": transaction_id,
-                    "profile": request.profile,
-                    "dangerous": request.dangerous,
-                    "path": path,
-                    "gains": gains,
-                    "tx": [hex_bytes(frame) for frame in frames],
-                    "write_rx": [hex_bytes(reply) for reply in write_replies],
-                    "ack": ack,
-                    "reconnects": reconnects,
-                    "precheck_rx": [hex_bytes(reply) for reply in precheck_replies],
-                    "precheck": precheck.as_dict(),
-                    "readback_tx": [hex_bytes(frame) for frame in read_frames],
-                    "readback_rx": [hex_bytes(reply) for reply in read_replies],
-                    "verification": verification.as_dict(),
-                    "elapsed_ms": elapsed_ms,
-                },
-            )
-            if verification.verified and ack == "RECEIVED":
-                # A write delivered across a reconnect cannot claim "already
-                # matched": the link was rebuilt underneath it, so the pre-write
-                # snapshot no longer describes what the speaker saw.
-                if reconnects:
-                    outcome = "WROTE (after reconnect) + VERIFIED"
-                    detail = f"The link dropped and recovered {reconnects} time(s) during this write."
-                elif changed:
-                    outcome = "CHANGED + VERIFIED"
-                    detail = "The pre-write state was different."
-                elif already_matched:
-                    outcome = "ALREADY MATCHED + VERIFIED"
-                    detail = "The requested state already matched."
-                else:
-                    # The readback proves where the speaker ended up, but the
-                    # pre-state never decoded, so whether this write changed
-                    # anything is simply unknown. Say that instead of guessing.
-                    outcome = "WROTE + VERIFIED (prior state unknown)"
-                    detail = f"The pre-write state could not be read ({precheck.status}), so the change is unconfirmed."
-                self._status(system="WRITE VERIFIED", protocol=f"{path} | {outcome}")
-                self.notify(
-                    f"Write response received; every EQ band matched read-back. {detail}",
-                    title="Write verified",
-                )
-            elif verification.verified:
-                self._status(system="STATE MATCH / ACK ISSUE", protocol=f"{path} | ACK {ack}")
-                self.notify(
-                    f"Read-back matches, but the write acknowledgement is {ack.lower()}.",
-                    title="Write not fully verified",
-                    severity="warning",
-                )
-            elif verification.status == "mismatch":
-                self._status(system="WRITE MISMATCH", protocol=f"{path} | READBACK DIFFERS")
-                self.notify(verification.message, title="Write verification failed", severity="error")
-            else:
-                self._status(system="WRITE UNVERIFIED", protocol=f"{path} | NO DECODABLE READBACK")
-                self.notify(verification.message, title="Write not verified", severity="warning")
+            self.notify(outcome.message, title=outcome.title, severity=outcome.severity)  # type: ignore[arg-type]
         except BaseException as exc:
-            # BaseException, not Exception: a cancelled apply that already put
-            # frames on the wire must still leave a record of what it sent.
-            elapsed_ms = round((time.perf_counter() - started) * 1000)
-            self.log_message(
-                f"TXN     |  {transaction_id}  |  FAILED  |  frames_written={frames_written}/{len(frames)}  |  "
-                f"{type(exc).__name__}: {exc}  |  {elapsed_ms} ms"
-            )
-            if address:
-                append_audit(
-                    "eq-apply-failed",
-                    address=address,
-                    pid=pid or None,
-                    applied=frames_written > 0,
-                    details={
-                        "transaction_id": transaction_id,
-                        "path": path,
-                        "gains": gains,
-                        "frames_written": frames_written,
-                        "frame_count": len(frames),
-                        "reconnects": reconnects,
-                        "write_rx": [hex_bytes(reply) for reply in write_replies],
-                        "precheck_rx": [hex_bytes(reply) for reply in precheck_replies],
-                        "readback_rx": [hex_bytes(reply) for reply in read_replies],
-                        "error": f"{type(exc).__name__}: {exc}",
-                        "elapsed_ms": elapsed_ms,
-                    },
-                )
             if not isinstance(exc, Exception):  # cancellation, KeyboardInterrupt
                 self._status(system="WRITE CANCELLED")
                 raise
