@@ -878,6 +878,5 @@ def sparkline(values: list[float]) -> str:
     blocks = ".:-=+*#@"
     limit = max(6.0, *(abs(value) for value in values))
     return "".join(
-        blocks[round((min(limit, max(-limit, value)) + limit) / (2 * limit) * (len(blocks) - 1))]
-        for value in values
+        blocks[round((min(limit, max(-limit, value)) + limit) / (2 * limit) * (len(blocks) - 1))] for value in values
     )

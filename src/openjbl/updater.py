@@ -112,9 +112,7 @@ def auto_update(*, timeout: float = 5.0) -> UpdateResult:
     `openjbl update` installs when asked, and exits first.
     """
     if is_editable_install():
-        return UpdateResult(
-            __version__, None, "editable-skip", "editable development install; update check skipped"
-        )
+        return UpdateResult(__version__, None, "editable-skip", "editable development install; update check skipped")
     check = check_for_update_safe(timeout=timeout)
     if check.status == "update-available" and check.latest is not None:
         return UpdateResult(

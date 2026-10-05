@@ -536,7 +536,7 @@ async def test_auto_setup_verifies_the_strongest_speaker_and_opens_eq(monkeypatc
 
 @pytest.mark.asyncio
 async def test_level_index_models_confirm_on_magnitude_not_only_on_boost():
-    """"A cut cannot clip" is a dB argument. On EQ_BALANCE and PRESET_EQ models the
+    """ "A cut cannot clip" is a dB argument. On EQ_BALANCE and PRESET_EQ models the
     wire value is an index into a firmware table, so -100 is not "very quiet", it
     is an entry that does not exist -- there, both directions need confirming."""
     link = FakeLink()

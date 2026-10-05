@@ -140,8 +140,7 @@ def _reject_out_of_range(pid: str, gains: list[float], *, allow_extended: bool) 
         if allow_extended:
             if not -EXTENDED_GAIN_LIMIT_DB <= gain <= EXTENDED_GAIN_LIMIT_DB:
                 raise ValueError(
-                    f"band {index} gain {gain:g} dB is outside the protocol's "
-                    f"+/-{EXTENDED_GAIN_LIMIT_DB:g} dB bound"
+                    f"band {index} gain {gain:g} dB is outside the protocol's +/-{EXTENDED_GAIN_LIMIT_DB:g} dB bound"
                 )
             continue
         floor = _standard_floor(pid, index)

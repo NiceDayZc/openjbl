@@ -523,10 +523,7 @@ class OpenJBLApp(App[None]):
         loading a profile -- invalidates it, instead of a queued event silently
         clearing the arm and letting a single click through.
         """
-        return (
-            self._danger_arm_profile == repr(self._arm_signature())
-            and time.monotonic() <= self._danger_armed_until
-        )
+        return self._danger_arm_profile == repr(self._arm_signature()) and time.monotonic() <= self._danger_armed_until
 
     def _reset_danger_arm(self) -> None:
         self._danger_armed_until = 0.0
@@ -857,8 +854,7 @@ class OpenJBLApp(App[None]):
         selected_row = self._scan_rows.get(address)
         if selected_row is not None and not selected_row.get("live", selected_row.get("rssi") is not None):
             raise RuntimeError(
-                "this is cached Windows pairing metadata, not a live BLE advertisement; "
-                "wake the speaker and scan again"
+                "this is cached Windows pairing metadata, not a live BLE advertisement; wake the speaker and scan again"
             )
         self._save_context()
         self._status(system="CONNECTING...", device="CONNECTING")

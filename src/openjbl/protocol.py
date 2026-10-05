@@ -378,8 +378,7 @@ def _charge6_bands(gains: Sequence[float]) -> list[ParametricBand]:
     if len(gains) != len(shape):
         raise ValueError(f"Charge 6 requires exactly {len(shape)} gains")
     return [
-        ParametricBand(kind, float(gain), frequency, q)
-        for (kind, frequency, q), gain in zip(shape, gains, strict=True)
+        ParametricBand(kind, float(gain), frequency, q) for (kind, frequency, q), gain in zip(shape, gains, strict=True)
     ]
 
 

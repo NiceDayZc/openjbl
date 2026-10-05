@@ -78,6 +78,11 @@ check_untyped_defs = true
 no_implicit_optional = true
 exclude = ["work/", "tools/"]
 
+# Windows-only runtime binding, imported lazily behind a platform check.
+[[tool.mypy.overrides]]
+module = ["winrt.*"]
+ignore_missing_imports = true
+
 [tool.bandit]
 exclude_dirs = ["tests", "work", "tools"]
 skips = ["B105"] # Filter enum names such as low_pass/high_pass are not credentials.

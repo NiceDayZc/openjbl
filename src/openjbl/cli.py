@@ -131,9 +131,7 @@ def send(args: argparse.Namespace, frames: list[bytes]) -> None:
         raise SystemExit(outcome)
 
 
-async def _apply_verified(
-    args: argparse.Namespace, frames: list[bytes], gains: list[float], pid: str
-) -> str | None:
+async def _apply_verified(args: argparse.Namespace, frames: list[bytes], gains: list[float], pid: str) -> str | None:
     """Write, then read the EQ back and compare it band by band. Returns an error."""
     read_path, read_frames = auto_read_frames(pid)
     manager = _manager(args)
