@@ -27,7 +27,9 @@ connection.
 
 Prefer a desktop window? The GUI is the same verified path with a black-and-white
 shadcn/ui front end, a live response curve drawn from the speaker's real filters,
-and per-band sliders:
+and per-band sliders. Hover a profile to see its curve before choosing it, turn on
+**Instant apply** to hear each one the moment you pick it, and the profile the
+speaker is actually holding is marked **On speaker**:
 
 ```powershell
 python -m pip install "openjbl[gui]"
@@ -58,7 +60,7 @@ openjbl set-profile --pid 20e3 bass --address DEVICE --apply
 |---|---|
 | **Discovery** | BLE scan with automatic JBL model/PID detection from Harman advertisement bytes, service UUIDs, names, and Windows paired metadata |
 | **Protocols** | Legacy simple, advanced-level and parametric EQ; Protocol 4 `0E02` parametric; Grip-style `0E7F` quantized. Routed automatically from the PID across 37 catalogued models |
-| **Profiles** | 18 curated curves, one per job, plus your own saved ones |
+| **Profiles** | 20 curated curves, one per job, plus your own saved ones |
 | **Evidence** | Read-back verification, per-band comparison, protocol acknowledgement checks, and JSONL audit logs |
 | **Transports** | BLE GATT, and Bluetooth Classic SPP over a COM port |
 
@@ -103,10 +105,10 @@ Run `openjbl profiles` for the full list, or see [Sound profiles](docs/PROFILES.
 **5 standard** -- inside each model's own UI range, so they work on every EQ
 model and need no confirmation: Flat, Balanced, Bass Heavy, Vocal Focus, Outdoor.
 
-**13 LAB** -- beyond the UI range, needing `--allow-extended`. A room family of
+**15 LAB** -- beyond the UI range, needing `--allow-extended`. A room family of
 published in-room targets: Harman Room Curve, Harman Listener Target (Olive
 2013), B&K House Curve (1974), Music Studio Room (Dolby Atmos Music), Cinema
-X-Curve (SMPTE ST 202) and Vocal Bloom Room. Then one per job: Hi-Fi Clarity,
+X-Curve (SMPTE ST 202), Vocal Bloom Room, Concert Hall and Spacious Depth. Then one per job: Hi-Fi Clarity,
 Deep Clean Bass, Vocal Presence, Cinema Dialogue, Podcast & Speech, Gaming
 Footsteps, Late Night. All of them only cut. A large
 boost has to come out of the DSP's headroom and the speaker's limiter, so it

@@ -29,7 +29,7 @@ model. Reach for these at full volume: they shape tone without giving up loudnes
 | `vocal` | Vocal Focus | -0.75, -1, -1, 3, 4, 2, 0 | Brings vocals and dialogue forward while reducing masking bass |
 | `outdoor` | Outdoor | 6, 4, 1, 0, 2, 3, 3 | Compensates for outdoor bass loss while retaining projection |
 
-## LAB (13)
+## LAB (15)
 
 Beyond the model's UI range. These need `--allow-extended` on the CLI, and only
 work on float-parametric models such as the Charge 6 -- a level-index encoder has
@@ -48,6 +48,8 @@ confirmation.
 | `lab-music-studio` | LAB / Music Studio Room | 0, -0.5, -0.5, -0.5, -1, -3, -6.5 | Dolby's music mixing-room curve: flat through the mids, gentle top roll-off |
 | `lab-cinema-x` | LAB / Cinema X-Curve | 0, 0, 0, 0, 0, -3.5, -10.5 | The movie-theatre room: full mids, highs rolling off above 2 kHz like a big hall |
 | `lab-vocal-bloom` | LAB / Vocal Bloom Room | 0, -2, -1.5, 0, -0.5, -3.5, -7 | A warm, intimate room: bass kept, voices bloom at 1 kHz, soft presence and top |
+| `lab-concert-hall` | LAB / Concert Hall | 0, 0, -2.5, -3.5, -4.5, -7, -14.5 | Warm and reverberant: the low end blooms and the highs fall away like a big hall |
+| `lab-spacious-depth` | LAB / Spacious Depth | 0, 0, -1, -1, -4, -7, -1.5 | Clean and deep: a BBC-style presence dip pushes the stage back, the air stays open |
 | `lab-hifi-clarity` | LAB / Hi-Fi Clarity | 0, -6, -7, -4, -5, -5, -3 | Clears the mud and box, keeps the bass, opens the air: clean and transparent |
 | `lab-bass` | LAB / Deep Clean Bass | 0, -6, -10.5, -8.5, -8.5, -9, -8 | A 10 dB bass tilt built from cuts, with the 500 Hz mud scooped so it stays tight |
 | `lab-vocal` | LAB / Vocal Presence | -7, -0.5, -3, -0.5, 0, -0.5, -0.5 | Singers up front: bass and box pulled back, voice warmth and air untouched |
@@ -59,7 +61,7 @@ confirmation.
 ### The room family
 
 Harman Room Curve is one of several published in-room targets, each the sound of
-a particular kind of room. The five after it are the others worth having, laid
+a particular kind of room. The seven after it are the others worth having, laid
 over the speaker the same way:
 
 | Room | Source | Shape | Sounds like |
@@ -69,6 +71,8 @@ over the speaker the same way:
 | Music Studio Room | Dolby Atmos Music target | +1 dB below 160 Hz, flat to 1.6 kHz, -1.5 dB/oct to 10 kHz | What the mix engineer heard; the most neutral |
 | Cinema X-Curve | SMPTE ST 202, large room | Flat to 2 kHz, -3 dB/oct to 10 kHz, -6 dB/oct above | A movie theatre: full mids, softened highs |
 | Vocal Bloom Room | Archimago, 2026 | Bass shelf, +2 dB at 700 Hz-1 kHz, taper from 3 kHz | A warm, intimate club; voices bloom |
+| Concert Hall | Beranek's bass ratio; air absorption | Flat to 160 Hz, then -5 dB at 2 kHz and -10 dB at 8 kHz | Warm and reverberant; highs fall away like a big hall |
+| Spacious Depth | BBC-heritage monitor presence dip | Gentle tilt, -6.5 dB dip at 3 kHz, air above 8 kHz open | Clean and deep; the stage moves back |
 
 They are the target's shape, not a measured room correction: there is no
 microphone in the loop, so the speaker's own tuning and your room still add to
@@ -106,6 +110,8 @@ numbers hide:
 | Music Studio Room | -0.0 | -0.1 | -0.6 | -0.4 | -0.6 | -0.4 | -0.7 | -0.6 | -1.4 | -1.4 | -3.4 | -2.1 | -3.5 | -5.9 |
 | Cinema X-Curve | -0.0 | -0.0 | -0.0 | -0.0 | -0.0 | -0.0 | -0.1 | -0.1 | -0.4 | -1.2 | -4.1 | -3.1 | -5.5 | -9.3 |
 | Vocal Bloom Room | -0.0 | -0.2 | -2.2 | -1.2 | -1.7 | -0.6 | -0.3 | -0.4 | -0.9 | -1.3 | -3.9 | -2.4 | -3.8 | -6.3 |
+| Concert Hall | -0.0 | -0.1 | -0.3 | -1.0 | -3.0 | -2.2 | -4.3 | -3.0 | -5.7 | -4.1 | -8.4 | -5.4 | -7.9 | -12.8 |
+| Spacious Depth | -0.0 | -0.0 | -0.1 | -0.4 | -1.2 | -0.9 | -1.6 | -1.9 | -4.8 | -3.6 | -7.5 | -2.7 | -1.4 | -1.5 |
 | Hi-Fi Clarity | -0.1 | -0.8 | -6.9 | -4.6 | -8.2 | -4.3 | -5.5 | -3.5 | -6.1 | -3.5 | -5.7 | -2.3 | -2.0 | -2.8 |
 | Deep Clean Bass | -0.2 | -0.9 | -7.5 | -6.1 | -12.3 | -7.3 | -11.0 | -6.8 | -10.7 | -6.4 | -10.5 | -4.8 | -5.0 | -7.4 |
 | Vocal Presence | -6.6 | -3.6 | -1.3 | -1.3 | -3.1 | -1.2 | -0.8 | -0.3 | -0.2 | -0.2 | -0.5 | -0.2 | -0.3 | -0.5 |
@@ -148,6 +154,8 @@ from the file.
 | The mix as the studio heard it | LAB / Music Studio Room |
 | Big and smooth, like a cinema | LAB / Cinema X-Curve |
 | Warm and intimate, voices blooming | LAB / Vocal Bloom Room |
+| Big, warm and reverberant | LAB / Concert Hall |
+| Clean, spacious, a deep stage | LAB / Spacious Depth |
 | Clear and transparent, more air | LAB / Hi-Fi Clarity |
 | Bass you feel, without boom | LAB / Deep Clean Bass |
 | Singers up front in music | LAB / Vocal Presence |

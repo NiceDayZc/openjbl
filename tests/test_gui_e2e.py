@@ -81,7 +81,8 @@ async def gui(monkeypatch):
         except Exception as exc:  # no Chrome on this machine
             await server.close()
             pytest.skip(f"Chrome is not available: {exc}")
-        page = await browser.new_page(viewport={"width": 1400, "height": 1000})
+        # Reduced motion: the page then skips its animations, so assertions never race a transition.
+        page = await browser.new_page(viewport={"width": 1400, "height": 1000}, reduced_motion="reduce")
         await page.goto(f"http://127.0.0.1:{port}/")
         state["page"] = page
         yield state
@@ -150,3 +151,44 @@ async def test_a_saved_profile_shows_up_under_my_profiles(gui):
     await expect(page.get_by_text("Saved “Living Room”")).to_be_visible()
     await expect(page.get_by_role("radio", name=re.compile("My profiles"))).to_have_attribute("aria-checked", "true")
     await expect(page.get_by_role("button", name=re.compile("^Living Room"))).to_be_visible()
+
+
+@pytest.mark.asyncio
+async def test_instant_apply_writes_on_pick_and_marks_the_profile_on_the_speaker(gui):
+    page = gui["page"]
+    await connect_through_model_picker(page)
+    await page.get_by_role("switch", name="Instant apply").click()
+    card = page.get_by_role("button", name=re.compile("^Late Night"))
+    await card.click()
+    # No Apply press: picking it was enough, and the speaker read it back.
+    await expect(card).to_contain_text("On speaker")
+    assert gui["speaker"].state is not None
+    # A write that verified stays quiet: no result table piles up per pick.
+    await expect(page.get_by_role("table")).to_have_count(0)
+    await page.get_by_role("button", name=re.compile("^Concert Hall")).click()
+    await expect(page.get_by_role("button", name=re.compile("^Concert Hall"))).to_contain_text("On speaker")
+    await expect(card).not_to_contain_text("On speaker")
+
+
+@pytest.mark.asyncio
+async def test_hovering_a_profile_previews_its_curve(gui):
+    page = gui["page"]
+    await page.get_by_role("button", name=re.compile("^Spacious Depth")).hover()
+    await expect(page.get_by_text("Preview: Spacious Depth")).to_be_visible()
+    await page.mouse.move(2, 2)
+    await expect(page.get_by_text("Preview: Spacious Depth")).to_be_hidden()
+
+
+@pytest.mark.asyncio
+async def test_reconnecting_shows_what_the_speaker_is_playing(gui):
+    page = gui["page"]
+    await connect_through_model_picker(page)
+    await page.get_by_role("button", name=re.compile("^Concert Hall")).click()
+    await page.get_by_role("button", name="Apply to speaker").click()
+    await expect(page.get_by_text("Write verified", exact=True)).to_be_visible()
+    await page.get_by_role("button", name=re.compile("^Late Night")).click()  # picked, never written
+    await page.get_by_role("button", name="Disconnect").click()
+    await connect_through_model_picker(page)
+    concert_hall = page.get_by_role("button", name=re.compile("^Concert Hall"))
+    await expect(concert_hall).to_have_attribute("data-selected", "true")
+    await expect(concert_hall).to_contain_text("On speaker")

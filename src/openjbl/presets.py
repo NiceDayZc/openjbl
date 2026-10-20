@@ -114,7 +114,7 @@ LAB_PROFILES = (
         "LAB / Harman Room Curve",
         "Harman's own preference target: low shelf under a gentle downward tilt",
         (0, -2, -5, -6, -7, -8, -10),
-        ("lab", "reference", "subtractive"),
+        ("lab", "reference", "room", "subtractive"),
         True,
     ),
     # The room family: other published in-room targets, each the sound of a
@@ -185,6 +185,36 @@ LAB_PROFILES = (
         ("lab", "reference", "room", "subtractive"),
         True,
     ),
+    # Two ways a room sounds big. EQ cannot add reverberation, but it can give
+    # the tonal balance a large space has, and the ear reads that as size.
+    #
+    # Fitted to a concert hall's reverberant balance: flat to 160 Hz, -1 at
+    # 250 Hz, then a slope to -5 at 2 kHz and -10 at 8 kHz. Halls rated warm
+    # ring longer below 250 Hz than in the mids (Beranek's bass ratio,
+    # 1.1-1.45), and air absorbs the top over the distance to the seats. The
+    # bloom stops short of 250 Hz, where this speaker already booms, so the
+    # warmth stays clean. Fit: 1.0 dB rms.
+    SoundProfile(
+        "lab-concert-hall",
+        "LAB / Concert Hall",
+        "Warm and reverberant: the low end blooms and the highs fall away like a big hall",
+        (0, 0, -2.5, -3.5, -4.5, -7, -14.5),
+        ("lab", "reference", "room", "subtractive"),
+        True,
+    ),
+    # Fitted to a gentle tilt with a presence dip centred on 3 kHz (-6.5 dB)
+    # and the air above 8 kHz left open. A dip there is the "BBC dip" of the
+    # BBC-heritage monitors: it moves the image back and opens up the depth
+    # of a recording's own space, without the bloom that makes a hall warm.
+    # Fit: 0.7 dB rms.
+    SoundProfile(
+        "lab-spacious-depth",
+        "LAB / Spacious Depth",
+        "Clean and deep: a BBC-style presence dip pushes the stage back, the air stays open",
+        (0, 0, -1, -1, -4, -7, -1.5),
+        ("lab", "reference", "room", "subtractive"),
+        True,
+    ),
     # The Harman curve's top end is what keeps it from sounding clear: past 2 kHz
     # it keeps falling. This one spends its depth on the 250-500 Hz mud and box
     # instead, leaves 1 kHz standing above its neighbours so voices come forward,
@@ -233,7 +263,7 @@ LAB_PROFILES = (
         "LAB / Cinema Dialogue",
         "Clear dialogue that keeps explosion weight: the boomy 250 Hz region removed",
         (-2, -7.5, -2, 0, 0, -0.5, -4.5),
-        ("lab", "media", "subtractive"),
+        ("lab", "media", "use-case", "subtractive"),
         True,
     ),
     # Fitted to: 50 Hz -16, 150 Hz -10, 250 Hz -6, 0.7-3 kHz 0, 4.5 kHz -2,
@@ -245,7 +275,7 @@ LAB_PROFILES = (
         "LAB / Podcast & Speech",
         "Talk only: rumble and hiss removed, the 500 Hz-3 kHz voice band untouched",
         (-19, -5, 0, 0, 0, -0.5, -12.5),
-        ("lab", "voice", "subtractive"),
+        ("lab", "voice", "use-case", "subtractive"),
         True,
     ),
     # Fitted to: 50-100 Hz -14, 250 Hz -7, 0.4-1 kHz -3 to -4, 2-4.5 kHz 0,
@@ -258,7 +288,7 @@ LAB_PROFILES = (
         "LAB / Gaming Footsteps",
         "Explosions and rumble pulled down so 2-4 kHz footsteps and cues stand out",
         (-17.5, -6.5, -3, -2.5, 0, 0, -6.5),
-        ("lab", "gaming", "subtractive"),
+        ("lab", "gaming", "use-case", "subtractive"),
         True,
     ),
     # Fitted to: 50 Hz -18, 125 Hz -10, 180 Hz -5, 250 Hz -2.5, flat from
@@ -271,7 +301,7 @@ LAB_PROFILES = (
         "LAB / Late Night",
         "Removes the bass that travels through walls; everything above 250 Hz intact",
         (-19, -1, -0.5, 0, 0, 0, -1),
-        ("lab", "quiet", "subtractive"),
+        ("lab", "quiet", "use-case", "subtractive"),
         True,
     ),
 )

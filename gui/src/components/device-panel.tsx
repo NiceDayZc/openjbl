@@ -1,4 +1,5 @@
-import { useState } from "react"
+import { memo, useState } from "react"
+import { AnimatePresence, motion } from "motion/react"
 import {
   BluetoothSearchingIcon,
   CheckIcon,
@@ -15,7 +16,9 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ScanRadar } from "@/components/scan-radar"
 import type { Device, ModelSummary, Target } from "@/lib/api"
+import { EASE_OUT, riseSmall, spring, stagger, swap } from "@/lib/motion"
 
 function SignalIcon({ rssi }: { rssi: number | null }) {
   if (rssi === null) return <SignalZeroIcon className="size-4 text-muted-foreground" />
@@ -39,7 +42,7 @@ function DeviceRow({ device, models, defaultPid, disabled, onConnect }: DeviceRo
   const [pid, setPid] = useState(device.pid ?? (models.some((m) => m.pid === defaultPid) ? defaultPid : ""))
   const needsModel = !device.pid && device.live
   return (
-    <li className="flex flex-col gap-2 px-3 py-2.5" data-testid="device-row">
+    <motion.li variants={riseSmall} className="flex flex-col gap-2 px-3 py-2.5" data-testid="device-row">
       <div className="flex items-center gap-3">
         <SignalIcon rssi={device.rssi} />
         <div className="min-w-0 flex-1">
@@ -56,7 +59,12 @@ function DeviceRow({ device, models, defaultPid, disabled, onConnect }: DeviceRo
         )}
       </div>
       {needsModel && (
-        <div className="flex items-center gap-2 pl-7">
+        <motion.div
+          className="flex items-center gap-2 pl-7"
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          transition={{ duration: 0.25, ease: EASE_OUT, delay: 0.08 }}
+        >
           <Select value={pid} onValueChange={setPid}>
             <SelectTrigger size="sm" className="min-w-0 flex-1" aria-label="Speaker model">
               <SelectValue placeholder="Choose the model" />
@@ -72,9 +80,9 @@ function DeviceRow({ device, models, defaultPid, disabled, onConnect }: DeviceRo
           <Button size="sm" disabled={disabled || !pid} onClick={() => onConnect(device, pid)}>
             Connect
           </Button>
-        </div>
+        </motion.div>
       )}
-    </li>
+    </motion.li>
   )
 }
 
@@ -91,7 +99,7 @@ interface DevicePanelProps {
   onDisconnect: () => void
 }
 
-export function DevicePanel({
+export const DevicePanel = memo(function DevicePanel({
   target,
   devices,
   models,
@@ -105,6 +113,7 @@ export function DevicePanel({
 }: DevicePanelProps) {
   const [showAll, setShowAll] = useState(false)
   const working = busy !== null
+  const searching = busy === "Auto setup" || busy === "Scanning" || busy === "Connecting"
   const jbl = devices.filter((device) => device.is_jbl)
   const shown = showAll ? devices : jbl
   return (
@@ -114,23 +123,26 @@ export function DevicePanel({
         <CardDescription>{target ? "Connected over Bluetooth LE" : "Close the JBL app on nearby phones first"}</CardDescription>
         {target && (
           <CardAction>
-            <Badge variant="outline" className="gap-1">
-              <CheckIcon />
-              Verified
-            </Badge>
+            <motion.span initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={spring} className="inline-flex">
+              <Badge variant="outline" className="gap-1">
+                <CheckIcon />
+                Verified
+              </Badge>
+            </motion.span>
           </CardAction>
         )}
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
+        <AnimatePresence mode="wait" initial={false}>
         {target ? (
-          <>
-            <div className="flex flex-col gap-1">
+          <motion.div key="connected" className="flex flex-col gap-4" variants={stagger(0.04)} initial="hidden" animate="show" exit={swap.exit}>
+            <motion.div variants={riseSmall} className="flex flex-col gap-1">
               <span className="text-2xl font-semibold tracking-tight">{target.model}</span>
               <span className="truncate font-mono text-xs text-muted-foreground" title={target.address}>
                 {target.name} · {target.address}
               </span>
-            </div>
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg border p-3 text-xs">
+            </motion.div>
+            <motion.dl variants={riseSmall} className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg border p-3 text-xs">
               <div>
                 <dt className="text-muted-foreground">Firmware</dt>
                 <dd className="mt-0.5 font-mono">{target.firmware}</dd>
@@ -143,8 +155,8 @@ export function DevicePanel({
                 <dt className="text-muted-foreground">EQ route</dt>
                 <dd className="mt-0.5 font-mono break-all">{target.eq_path}</dd>
               </div>
-            </dl>
-            <div className="flex gap-2">
+            </motion.dl>
+            <motion.div variants={riseSmall} className="flex gap-2">
               <Button variant="outline" className="flex-1" disabled={working} onClick={onReverify}>
                 <RefreshCwIcon data-icon="inline-start" />
                 Re-verify
@@ -153,13 +165,21 @@ export function DevicePanel({
                 <UnplugIcon data-icon="inline-start" />
                 Disconnect
               </Button>
-            </div>
-          </>
+            </motion.div>
+          </motion.div>
         ) : (
-          <>
-            <p className="text-sm text-muted-foreground">
-              Finds the strongest JBL nearby, connects and checks its EQ route. Nothing is written to the speaker.
-            </p>
+          <motion.div key="idle" className="flex flex-col gap-4" {...swap}>
+            <AnimatePresence mode="wait" initial={false}>
+              {searching ? (
+                <motion.div key="radar" {...swap}>
+                  <ScanRadar label={busy === "Connecting" ? "Connecting and verifying…" : "Listening for JBL speakers…"} fast={busy === "Connecting"} />
+                </motion.div>
+              ) : (
+                <motion.p key="hint" {...swap} className="text-sm text-muted-foreground">
+                  Finds the strongest JBL nearby, connects and checks its EQ route. Nothing is written to the speaker.
+                </motion.p>
+              )}
+            </AnimatePresence>
             <div className="flex gap-2">
               <Button size="lg" className="flex-1" disabled={working} onClick={onSetup}>
                 {busy === "Auto setup" || busy === "Connecting" ? (
@@ -176,7 +196,13 @@ export function DevicePanel({
             {devices.length > 0 && (
               <div className="flex flex-col gap-2">
                 {shown.length > 0 ? (
-                  <ul className="flex flex-col divide-y rounded-lg border">
+                  <motion.ul
+                    key={devices.map((d) => d.address).join()}
+                    className="flex flex-col divide-y overflow-hidden rounded-lg border"
+                    variants={stagger(0.035)}
+                    initial="hidden"
+                    animate="show"
+                  >
                     {shown.slice(0, 12).map((device) => (
                       <DeviceRow
                         key={device.address}
@@ -187,7 +213,7 @@ export function DevicePanel({
                         onConnect={onConnect}
                       />
                     ))}
-                  </ul>
+                  </motion.ul>
                 ) : (
                   <p className="rounded-lg border border-dashed px-3 py-4 text-center text-xs text-muted-foreground">
                     No JBL speaker was advertising. Turn it on, or press its Bluetooth button, then scan again.
@@ -200,9 +226,10 @@ export function DevicePanel({
                 )}
               </div>
             )}
-          </>
+          </motion.div>
         )}
+        </AnimatePresence>
       </CardContent>
     </Card>
   )
-}
+})

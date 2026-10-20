@@ -129,3 +129,38 @@
     @apply font-sans;
     }
 }
+/* Ambient backdrop: a faint dot grid under a soft light. Static on purpose:
+   a drifting layer under the blurred header forced the blur to be recomputed on
+   every frame, the whole time the page was open. */
+.ambient {
+  pointer-events: none;
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 640px;
+  overflow: hidden;
+  z-index: 0;
+}
+.ambient::before {
+  content: "";
+  position: absolute;
+  inset: -30% -15% auto -15%;
+  height: 130%;
+  background: radial-gradient(55% 45% at 50% 0%, color-mix(in oklch, var(--foreground) 10%, transparent), transparent 72%);
+}
+.ambient::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(color-mix(in oklch, var(--foreground) 16%, transparent) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(75% 65% at 50% 0%, black, transparent 78%);
+  opacity: 0.55;
+}
+
+/* The theme switch animates as a circular reveal (see ThemeToggle); turn off the
+   default cross-fade so only the clip-path moves. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
